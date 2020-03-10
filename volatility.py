@@ -5,29 +5,30 @@ from datetime import datetime, timedelta
 from dateutil import parser
 from enum import Enum
 
-conn = sqlite3.connect(sys.argv[1])
-
 class Price(Enum):
     OPEN  = 0
     HIGH  = 1
     LOW   = 2
     CLOSE = 3
 
-class Stat:
+class ShareStat:
     def __init__(self, market, share):
-        self.market = market
-        self.share  = share
+        self.conn   = sqlite3.connect(sys.argv[1])
+        self.cur    = self.conn.cursor()
+
+        rows = self.cur.execute('''SELECT rowid FROM Market WHERE Abbr = ?''', (market,))
+        self.marketId = self.cur.fetchone()[0]
+
+        rows = self.cur.execute('''SELECT rowid FROM Share WHERE Abbr = ?''', (share,))
+        self.shareId = self.cur.fetchone()[0]
 
     def getPrice(self, date, price):
-        cur = conn.cursor()
-        rows = cur.execute('''SELECT OpenPrice, HighPrice, LowPrice, ClosePrice
-                            FROM Quotation
-                                INNER JOIN Market ON Quotation.MarketId = Market.rowid
-                                INNER JOIN Share ON Quotation.ShareId = Share.rowid
-                            WHERE Market.Abbr = ?
-                                AND Share.Abbr = ?
-                                AND IntervalMin == "D"
-                                AND DateTime == ?''', (self.market, self.share, date,))
+        rows = self.cur.execute('''SELECT OpenPrice, HighPrice, LowPrice, ClosePrice
+                                   FROM Quotation
+                                   WHERE MarketId = ?
+                                       AND ShareId = ?
+                                       AND IntervalMin == "D"
+                                       AND DateTime == ?''', (self.marketId, self.shareId, date,))
 
         for row in rows:
             return row[price.value]
@@ -35,18 +36,15 @@ class Stat:
         return -1
 
     def getVolatility(self, date, days):
-        cur = conn.cursor()
         dateprev = date - timedelta(days=days)
 
-        rows = cur.execute('''SELECT date(DateTime), LowPrice, HighPrice
-                            FROM Quotation
-                                INNER JOIN Market ON Quotation.MarketId = Market.rowid
-                                INNER JOIN Share ON Quotation.ShareId = Share.rowid
-                            WHERE Market.Abbr = ?
-                                AND Share.Abbr = ?
-                                AND IntervalMin == "D"
-                                AND DateTime >= ? AND DateTime <= ?
-                            ORDER BY DateTime ASC''', (self.market, self.share, dateprev, date))
+        rows = self.cur.execute('''SELECT date(DateTime), LowPrice, HighPrice
+                                   FROM Quotation
+                                   WHERE MarketId = ?
+                                       AND ShareId = ?
+                                       AND IntervalMin == "D"
+                                       AND DateTime >= ? AND DateTime <= ?
+                                   ORDER BY DateTime ASC''', (self.marketId, self.shareId, dateprev, date))
 
         avgVolatility = 0
         for row in rows:
@@ -54,17 +52,15 @@ class Stat:
 
         return avgVolatility / days
 
-curMarket = "SPBEX"
-curShare  = "AMD"
 
 date = parser.parse(sys.argv[2])
 days = 15
 if len(sys.argv) > 3:
     days = sys.argv[3]
 
-stat = Stat(curMarket, curShare)
+stat = ShareStat("SPBEX", "AMD")
 closePrice = stat.getPrice(date, Price.CLOSE)
-volatility15 = stat.getVolatility(date, 15)
+volatility15 = stat.getVolatility(date, days)
 
 print("Price: {0:.4f}$, Volatility {1:.4f}$, {2:.2f}%".format(closePrice, volatility15, volatility15 * 100.0 / closePrice))
 
