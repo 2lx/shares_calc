@@ -4,11 +4,11 @@ cat "$1" | tail -n +2 | awk '
     BEGIN {
         FS = ";"
 
-        shareCmd = "sqlite3 $DBFILE \".separator , |\" \"SELECT Abbr FROM Share ORDER BY rowid;\"";
+        shareCmd = "sqlite3 '"$DBFILE"' \".separator , |\" \"SELECT Abbr FROM Share ORDER BY rowid;\"";
         shareCmd |& getline shareResponse
         shareCount = split(shareResponse, shareNames, "|") - 1
 
-        marketCmd = "sqlite3 $DBFILE \".separator , |\" \"SELECT Abbr FROM Market ORDER BY rowid;\"";
+        marketCmd = "sqlite3 '"$DBFILE"' \".separator , |\" \"SELECT Abbr FROM Market ORDER BY rowid;\"";
         marketCmd |& getline marketResponse
         marketCount = split(marketResponse, marketNames, "|") - 1
     };
@@ -48,6 +48,7 @@ cat "$1" | tail -n +2 | awk '
 
         print marketId ";"                          \
               shareId ";"                           \
+              $2 ";"                                \
               formatDate($3) " " formatTime($4) ";" \
               $5 ";" $6 ";" $7 ";" $8 ";" $9;
     }
