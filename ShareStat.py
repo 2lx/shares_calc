@@ -2,7 +2,6 @@
 import sqlite3
 import sys
 from datetime import datetime, timedelta
-from dateutil import parser
 from enum import Enum
 
 class Price(Enum):
@@ -12,8 +11,8 @@ class Price(Enum):
     CLOSE = 3
 
 class ShareStat:
-    def __init__(self, market, share):
-        self.conn   = sqlite3.connect(sys.argv[1])
+    def __init__(self, database, market, share):
+        self.conn   = sqlite3.connect(database)
         self.cur    = self.conn.cursor()
 
         rows = self.cur.execute('''SELECT rowid FROM Market WHERE Abbr = ?''', (market,))
@@ -51,16 +50,4 @@ class ShareStat:
             avgVolatility += abs(row[2] - row[1])
 
         return avgVolatility / days
-
-
-date = parser.parse(sys.argv[2])
-days = 15
-if len(sys.argv) > 3:
-    days = sys.argv[3]
-
-stat = ShareStat("SPBEX", "AMD")
-closePrice = stat.getPrice(date, Price.CLOSE)
-volatility15 = stat.getVolatility(date, days)
-
-print("Price: {0:.4f}$, Volatility {1:.4f}$, {2:.2f}%".format(closePrice, volatility15, volatility15 * 100.0 / closePrice))
 
