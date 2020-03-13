@@ -26,7 +26,7 @@ class ShareStat:
                                    FROM Quotation
                                    WHERE MarketId = ?
                                        AND ShareId = ?
-                                       AND IntervalMin == "D"
+                                       AND IntervalMin == "15"
                                        AND DateTime == ?''', (self.marketId, self.shareId, date,))
 
         for row in rows:
@@ -34,8 +34,9 @@ class ShareStat:
 
         return -1
 
-    def getVolatility(self, date, days):
-        dateprev = date - timedelta(days=days)
+    def getVolatilityDays(self, date, days):
+        rdate = date.replace(hour = 0, minute = 0, second = 0)
+        rdateprev = rdate - timedelta(days=days)
 
         rows = self.cur.execute('''SELECT date(DateTime), LowPrice, HighPrice
                                    FROM Quotation
@@ -43,11 +44,28 @@ class ShareStat:
                                        AND ShareId = ?
                                        AND IntervalMin == "D"
                                        AND DateTime >= ? AND DateTime <= ?
-                                   ORDER BY DateTime ASC''', (self.marketId, self.shareId, dateprev, date))
+                                   ORDER BY DateTime ASC''', (self.marketId, self.shareId, rdateprev, rdate))
 
         avgVolatility = 0
         for row in rows:
             avgVolatility += abs(row[2] - row[1])
 
         return avgVolatility / days
+
+    def getMinMaxPriceDays(self, date, days):
+        rdate = date.replace(hour = 0, minute = 0, second = 0)
+        rdateprev = rdate - timedelta(days=days)
+
+        rows = self.cur.execute('''SELECT min(LowPrice), max(HighPrice)
+                                   FROM Quotation
+                                   WHERE MarketId = ?
+                                       AND ShareId = ?
+                                       AND IntervalMin == "D"
+                                       AND DateTime >= ? AND DateTime <= ?
+                                   GROUP BY MarketId''', (self.marketId, self.shareId, rdateprev, rdate))
+
+        for row in rows:
+            return row[0], row[1]
+
+        return -1, -1
 
