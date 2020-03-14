@@ -5,7 +5,7 @@ from datetime import datetime
 from dateutil import parser
 from ShareStat import ShareStat
 
-from Algo import Algo
+from SimpleAlgo import SimpleAlgo as Algo
 from AlgoDrawer import drawAlgoInfo
 
 cash      = 2000.0

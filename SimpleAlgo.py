@@ -3,7 +3,7 @@ from AlgoInfo import AlgoInfo
 from ShareStat import ShareStat, Price
 from datetime import datetime, timedelta
 
-class Algo:
+class SimpleAlgo:
     def __init__(self, shareStat):
         self.stat = shareStat
         self.info = AlgoInfo()
@@ -41,11 +41,7 @@ class Algo:
                     sharesCount  = 0
                     minSoldPrice = 0
 
-                self.info.axisDT.append(date)
-                self.info.fnPrices.append(openPrice)
-                self.info.fnCounts.append(sharesCount)
-                self.info.fnSoldPrices.append(minSoldPrice)
-                self.info.fnCapital.append(cash + sharesCount * openPrice)
+                self.info.append(date, openPrice, sharesCount, cash, volatility15, minSoldPrice)
 
             date += timedelta(minutes=15)
 
