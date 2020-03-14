@@ -54,7 +54,6 @@ class TestShareStat(unittest.TestCase):
         date5e1 = datetime(2017, 10, 3) + timedelta(hours=22)
         self.assertEqual(self.stat.getMinMaxPriceDays(date5e1, delta5.days), (12.62, 12.85))
 
-
     def test_getVolatilityInterval(self):
         date1s = datetime(2017, 10, 2) + timedelta(hours=22)
         date1e = datetime(2017, 10, 4) + timedelta(hours=18)
