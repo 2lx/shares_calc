@@ -60,6 +60,28 @@ class ShareStat:
 
         return None
 
+    def priceRiseInRow(self, date, rowPeriods, periodDays):
+        curPrice = self.getPrices(date).get(Price.HIGH)
+
+        # get price from period [yesterday - periodDays <=> yesterday]
+        rdate          = date.replace(hour=0, minute=0, second=0)
+        curMin, curMax = self.getMinMaxPriceDays(date, periodDays)
+
+        if curMax > curPrice:
+            return False
+
+        count = 1
+        while count <= rowPeriods:
+            rprevdate  = rdate - timedelta(days=periodDays)
+            prevMin, prevMax = self.getMinMaxPriceDays(rprevdate, periodDays)
+            if prevMax >= curMax:
+                return False
+
+            curMin, curMax = prevMin, prevMax
+            count          = count + 1
+
+        return True
+
     def getVolatilityDays(self, date, days):
         rdate = date.replace(hour = 0, minute = 0, second = 0)
         rdateprev = rdate - timedelta(days=days)

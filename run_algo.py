@@ -1,11 +1,11 @@
 #!/usr/bin/python3
 import sqlite3
 import sys
-from datetime import datetime
-from dateutil import parser
+from datetime  import datetime
+from dateutil  import parser
 from ShareStat import ShareStat
 
-from AlgoSimple import AlgoSimple as Algo
+from Algo2      import Algo2 as Algo
 from AlgoDrawer import drawAlgoInfo
 
 cash      = 2000.0
