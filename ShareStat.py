@@ -79,6 +79,7 @@ class ShareStat:
 
             curMin, curMax = prevMin, prevMax
             count          = count + 1
+            rdate          = rprevdate
 
         return True
 

@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS Share(
 );
 
 INSERT INTO Share (Name, Abbr)
-VALUES ("Advanced Micro Devices, Inc.", "AMD");
+SELECT "Advanced Micro Devices, Inc.", "AMD" UNION ALL
+SELECT "Cisco Systems, Inc.", "CSCO";
 
 -- Markets
 CREATE TABLE IF NOT EXISTS Market(
