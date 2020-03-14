@@ -11,8 +11,12 @@ def drawAlgoInfo(info, market, share):
     fig.tight_layout()
     plt.subplots_adjust(hspace=0.09, left=0.07, right=0.94, bottom=0.04, top=0.935)
 
-    ax1.plot(info.axisDT, info.fnPrice,
-        color="#2980b9",
+    ax1.fill_between(info.axisDT, info.fnLowPrice, info.fnHighPrice,
+        facecolor="#2980b9",
+        edgecolor="#2980b9",
+        joinstyle="bevel",
+        capstyle="butt",
+        step="mid",
         label="AMD shares price")
     ax1.fill_between(info.axisDT, 0, info.fnSoldPrice,
         facecolor="#bdc3c7",
@@ -21,7 +25,7 @@ def drawAlgoInfo(info, market, share):
         capstyle="butt",
         step="mid",
         label="exit price")
-    ax1.axis([minDay, maxDay, 0, max(info.fnPrice) + 5])
+    ax1.axis([minDay, maxDay, 0, max(info.fnHighPrice) + 5])
     ax1.set_ylabel("USD")
     ax1.legend()
     ax1.tick_params(top=True, right=True, left=True, bottom=True, labeltop=True, labelright=True)

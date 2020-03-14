@@ -12,11 +12,7 @@ class Price(Enum):
 
 class PriceKit:
     def __init__(self, openP, highP, lowP, closeP):
-        self.prices = []
-        self.prices.append(openP)
-        self.prices.append(highP)
-        self.prices.append(lowP)
-        self.prices.append(closeP)
+        self.prices = [ openP, highP, lowP, closeP ]
 
     def get(self, price_type):
         return self.prices[price_type.value]

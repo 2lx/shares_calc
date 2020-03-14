@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 from ShareStat import ShareStat, Price
 
 from datetime import datetime, timedelta
