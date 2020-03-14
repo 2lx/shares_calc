@@ -26,7 +26,7 @@ class ShareStat:
                                    FROM Quotation
                                    WHERE MarketId = ?
                                        AND ShareId = ?
-                                       AND IntervalMin == "15"
+                                       AND IntervalMin = "15"
                                        AND DateTime == ?''', (self.marketId, self.shareId, date,))
 
         for row in rows:
@@ -38,34 +38,45 @@ class ShareStat:
         rdate = date.replace(hour = 0, minute = 0, second = 0)
         rdateprev = rdate - timedelta(days=days)
 
-        rows = self.cur.execute('''SELECT date(DateTime), LowPrice, HighPrice
+        return self.getVolatilityDaysInterval(rdateprev, rdate)
+
+    def getVolatilityDaysInterval(self, dtStart, dtEnd):
+        rows = self.cur.execute('''SELECT date(DateTime), min(LowPrice), max(HighPrice)
                                    FROM Quotation
                                    WHERE MarketId = ?
                                        AND ShareId = ?
-                                       AND IntervalMin == "D"
-                                       AND DateTime >= ? AND DateTime <= ?
-                                   ORDER BY DateTime ASC''', (self.marketId, self.shareId, rdateprev, rdate))
+                                       AND IntervalMin = "15"
+                                       AND DateTime >= ? AND DateTime < ?
+                                   GROUP BY date(DateTime)
+                                   ORDER BY date(DateTime) ASC''', (self.marketId, self.shareId, dtStart, dtEnd))
+        rows = self.cur.fetchall()
+        if len(rows) < 1:
+            return 0
 
         avgVolatility = 0
         for row in rows:
             avgVolatility += abs(row[2] - row[1])
 
-        return avgVolatility / days
+        return round(avgVolatility / len(rows), 4)
+
 
     def getMinMaxPriceDays(self, date, days):
         rdate = date.replace(hour = 0, minute = 0, second = 0)
         rdateprev = rdate - timedelta(days=days)
 
+        return self.getMinMaxPriceInterval(rdateprev, rdate)
+
+
+    def getMinMaxPriceInterval(self, dtStart, dtEnd):
         rows = self.cur.execute('''SELECT min(LowPrice), max(HighPrice)
                                    FROM Quotation
                                    WHERE MarketId = ?
                                        AND ShareId = ?
-                                       AND IntervalMin == "D"
+                                       AND IntervalMin == "15"
                                        AND DateTime >= ? AND DateTime <= ?
-                                   GROUP BY MarketId''', (self.marketId, self.shareId, rdateprev, rdate))
+                                   GROUP BY MarketId''', (self.marketId, self.shareId, dtStart, dtEnd))
+        rows = self.cur.fetchall()
+        if len(rows) != 1:
+            return -1, -1
 
-        for row in rows:
-            return row[0], row[1]
-
-        return -1, -1
-
+        return rows[0][0], rows[0][1]
