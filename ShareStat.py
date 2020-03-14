@@ -2,6 +2,7 @@
 import sqlite3
 import sys
 from datetime import datetime, timedelta
+from dateutil import parser
 from enum import Enum
 
 class Price(Enum):
@@ -9,6 +10,17 @@ class Price(Enum):
     HIGH  = 1
     LOW   = 2
     CLOSE = 3
+
+class PriceKit:
+    def __init__(self, openP, highP, lowP, closeP):
+        self.prices = []
+        self.prices.append(openP)
+        self.prices.append(highP)
+        self.prices.append(lowP)
+        self.prices.append(closeP)
+
+    def getPrice(self, price_type):
+        return self.prices[price_type.value]
 
 class ShareStat:
     def __init__(self, database, market, share):
@@ -21,16 +33,35 @@ class ShareStat:
         rows = self.cur.execute('''SELECT rowid FROM Share WHERE Abbr = ?''', (share,))
         self.shareId = self.cur.fetchone()[0]
 
-    def getPrice(self, date, price):
-        rows = self.cur.execute('''SELECT OpenPrice, HighPrice, LowPrice, ClosePrice
+        # precalculate prices
+        self.prices = {}
+        rows = self.cur.execute('''SELECT DateTime, OpenPrice, HighPrice, LowPrice, ClosePrice
                                    FROM Quotation
                                    WHERE MarketId = ?
                                        AND ShareId = ?
                                        AND IntervalMin = "15"
-                                       AND DateTime == ?''', (self.marketId, self.shareId, date,))
+                                   ORDER BY DateTime ASC''', (self.marketId, self.shareId,))
 
         for row in rows:
-            return row[price.value]
+            self.prices[parser.parse(row[0])] = PriceKit(row[1], row[2], row[3], row[4])
+
+        # precalculate volatilities 15 days
+        self.volatDay = {}
+        rows = self.cur.execute('''SELECT date(DateTime), min(LowPrice), max(HighPrice)
+                                   FROM Quotation
+                                   WHERE MarketId = ?
+                                       AND ShareId = ?
+                                       AND IntervalMin = "15"
+                                   GROUP BY date(DateTime)
+                                   ORDER BY date(DateTime) ASC''', (self.marketId, self.shareId,))
+
+        for row in rows:
+            date = parser.parse(row[0])
+            self.volatDay[date] = (row[1], row[2],)
+
+    def getPrice(self, date, price):
+        if date in self.prices:
+            return self.prices[date].getPrice(price)
 
         return -1
 
@@ -38,7 +69,17 @@ class ShareStat:
         rdate = date.replace(hour = 0, minute = 0, second = 0)
         rdateprev = rdate - timedelta(days=days)
 
-        return self.getVolatilityDaysInterval(rdateprev, rdate)
+        volSum = 0
+        count = 0
+        while rdateprev < rdate:
+            if rdateprev in self.volatDay:
+                minPrice, maxPrice = self.volatDay[rdateprev]
+                volSum += abs(maxPrice - minPrice)
+                count += 1
+
+            rdateprev += timedelta(days=1)
+
+        return round(volSum / count, 4)
 
     def getVolatilityDaysInterval(self, dtStart, dtEnd):
         rows = self.cur.execute('''SELECT date(DateTime), min(LowPrice), max(HighPrice)
@@ -64,8 +105,15 @@ class ShareStat:
         rdate = date.replace(hour = 0, minute = 0, second = 0)
         rdateprev = rdate - timedelta(days=days)
 
-        return self.getMinMaxPriceInterval(rdateprev, rdate)
+        minResult, maxResult = 999999, 0
+        while rdateprev < rdate:
+            if rdateprev in self.volatDay:
+                minPrice, maxPrice = self.volatDay[rdateprev]
+                minResult, maxResult = min(minResult, minPrice), max(maxResult, maxPrice)
 
+            rdateprev += timedelta(days=1)
+
+        return minResult, maxResult
 
     def getMinMaxPriceInterval(self, dtStart, dtEnd):
         rows = self.cur.execute('''SELECT min(LowPrice), max(HighPrice)
@@ -73,7 +121,7 @@ class ShareStat:
                                    WHERE MarketId = ?
                                        AND ShareId = ?
                                        AND IntervalMin == "15"
-                                       AND DateTime >= ? AND DateTime <= ?
+                                       AND DateTime >= ? AND DateTime < ?
                                    GROUP BY MarketId''', (self.marketId, self.shareId, dtStart, dtEnd))
         rows = self.cur.fetchall()
         if len(rows) != 1:

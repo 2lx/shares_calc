@@ -15,12 +15,13 @@ class SimpleAlgo:
         date = startDate
 
         while date < endDate:
-            volatility15             = self.stat.getVolatilityDays(date, 15)
-            openPrice                = self.stat.getPrice(date, Price.OPEN)
-            ytdMinPrice, ytdMaxPrice = self.stat.getMinMaxPriceDays(date, 1)
-            sysMinPrice, sysMaxPrice = self.stat.getMinMaxPriceDays(date, 14)
+            openPrice = self.stat.getPrice(date, Price.OPEN)
 
             if openPrice > 0:
+                volatility15             = self.stat.getVolatilityDays(date, 15)
+                ytdMinPrice, ytdMaxPrice = self.stat.getMinMaxPriceDays(date, 1)
+                sysMinPrice, sysMaxPrice = self.stat.getMinMaxPriceDays(date, 14)
+
                 if ytdMaxPrice == sysMaxPrice:
                     if sharesCount == 0:
                         boughtPrice = openPrice
