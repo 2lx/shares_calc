@@ -1,7 +1,7 @@
-#!/usr/bin/python3
-import unittest
 from ShareStat import ShareStat, Price
+
 from datetime import datetime, timedelta
+import unittest
 
 class TestShareStat(unittest.TestCase):
     def setUp(self):
@@ -9,22 +9,22 @@ class TestShareStat(unittest.TestCase):
 
     def test_getPrice(self):
         date1 = datetime(2017, 10, 3) + timedelta(hours=22)
-        self.assertEqual(self.stat.getPrice(date1, Price.OPEN),  13.34)
-        self.assertEqual(self.stat.getPrice(date1, Price.HIGH),  13.35)
-        self.assertEqual(self.stat.getPrice(date1, Price.LOW),   13.31)
-        self.assertEqual(self.stat.getPrice(date1, Price.CLOSE), 13.33)
+        self.assertEqual(self.stat.getPrices(date1).get(Price.OPEN),  13.34)
+        self.assertEqual(self.stat.getPrices(date1).get(Price.HIGH),  13.35)
+        self.assertEqual(self.stat.getPrices(date1).get(Price.LOW),   13.31)
+        self.assertEqual(self.stat.getPrices(date1).get(Price.CLOSE), 13.33)
 
         date2 = datetime(2018, 5, 3) + timedelta(hours=18)
-        self.assertEqual(self.stat.getPrice(date2, Price.OPEN),  10.87)
-        self.assertEqual(self.stat.getPrice(date2, Price.HIGH),  10.94)
-        self.assertEqual(self.stat.getPrice(date2, Price.LOW),   10.85)
-        self.assertEqual(self.stat.getPrice(date2, Price.CLOSE), 10.92)
+        self.assertEqual(self.stat.getPrices(date2).get(Price.OPEN),  10.87)
+        self.assertEqual(self.stat.getPrices(date2).get(Price.HIGH),  10.94)
+        self.assertEqual(self.stat.getPrices(date2).get(Price.LOW),   10.85)
+        self.assertEqual(self.stat.getPrices(date2).get(Price.CLOSE), 10.92)
 
         date3 = datetime(2019, 12, 16) + timedelta(hours=18)
-        self.assertEqual(self.stat.getPrice(date3, Price.OPEN),  42.61)
-        self.assertEqual(self.stat.getPrice(date3, Price.HIGH),  42.69)
-        self.assertEqual(self.stat.getPrice(date3, Price.LOW),   42.50)
-        self.assertEqual(self.stat.getPrice(date3, Price.CLOSE), 42.65)
+        self.assertEqual(self.stat.getPrices(date3).get(Price.OPEN),  42.61)
+        self.assertEqual(self.stat.getPrices(date3).get(Price.HIGH),  42.69)
+        self.assertEqual(self.stat.getPrices(date3).get(Price.LOW),   42.50)
+        self.assertEqual(self.stat.getPrices(date3).get(Price.CLOSE), 42.65)
 
     def test_getMinMaxPriceInterval(self):
         date1s = datetime(2017, 10, 1) + timedelta(hours=22)

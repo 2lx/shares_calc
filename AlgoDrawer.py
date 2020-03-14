@@ -1,5 +1,5 @@
-#!/usr/bin/python3
 from AlgoInfo import AlgoInfo
+
 import matplotlib.pyplot as plt
 
 def drawAlgoInfo(info, market, share):

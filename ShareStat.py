@@ -1,9 +1,8 @@
-#!/usr/bin/python3
 import sqlite3
 import sys
 from datetime import datetime, timedelta
 from dateutil import parser
-from enum import Enum
+from enum     import Enum
 
 class Price(Enum):
     OPEN  = 0
@@ -19,7 +18,7 @@ class PriceKit:
         self.prices.append(lowP)
         self.prices.append(closeP)
 
-    def getPrice(self, price_type):
+    def get(self, price_type):
         return self.prices[price_type.value]
 
 class ShareStat:
@@ -59,11 +58,11 @@ class ShareStat:
             date = parser.parse(row[0])
             self.volatDay[date] = (row[1], row[2],)
 
-    def getPrice(self, date, price):
+    def getPrices(self, date):
         if date in self.prices:
-            return self.prices[date].getPrice(price)
+            return self.prices[date]
 
-        return -1
+        return None
 
     def getVolatilityDays(self, date, days):
         rdate = date.replace(hour = 0, minute = 0, second = 0)

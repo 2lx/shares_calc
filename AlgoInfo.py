@@ -1,4 +1,5 @@
-#!/usr/bin/python3
+from State     import State
+from ShareStat import Price
 
 class AlgoInfo:
     def __init__(self):
@@ -10,11 +11,12 @@ class AlgoInfo:
         self.fnSoldPrice  = []
         self.fnCapital    = []
 
-    def append(self, date, price, count, cash, volatility, soldPrice):
+    def append(self, date, priceKit, state, volatility):
+        price = priceKit.get(Price.OPEN)
         self.axisDT.append(date)
         self.fnPrice.append(price)
-        self.fnCount.append(count)
-        self.fnCash.append(count)
+        self.fnCount.append(state.shareQty)
+        self.fnCash.append(state.cash)
         self.fnVolatility.append(volatility)
-        self.fnSoldPrice.append(soldPrice)
-        self.fnCapital.append(cash + price * count)
+        self.fnSoldPrice.append(state.exitPrice)
+        self.fnCapital.append(state.cash + price * state.shareQty)
