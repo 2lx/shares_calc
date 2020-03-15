@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from ShareStat import ShareStat, Price
+from ShareStat import *
 
 from datetime import datetime, timedelta
 import unittest
@@ -76,6 +76,42 @@ class TestShareStat(unittest.TestCase):
         self.assertEqual(self.stat.getVolatilityDays(date4e, delta4.days), 1.1099)
         date4e1 = datetime(2019,  9, 5) + timedelta(hours=14)
         self.assertEqual(self.stat.getVolatilityDays(date4e1, delta4.days), 1.1099)
+
+    def test_tendenciesInRow(self):
+        date = datetime(2017,  8, 31) + timedelta(hours=15, minutes=30)
+        tends = self.stat.tendenciesInRow(date, 15, 10)
+
+        def checkTends(tendsVals):
+            index = 0
+            for val in tendsVals:
+                self.assertEqual(tends[Tendency(index)], val)
+                index += 1
+
+        checkTends([0, 2, 0, 1, 0, 1, 0, 0, 0])
+
+        date = datetime(2018, 2, 3) + timedelta(hours=2, minutes=15)
+        tends = self.stat.tendenciesInRow(date, 15, 10)
+        checkTends([0, 4, 2, 0, 2, 0, 2, 0, 2])
+
+        date = datetime(2018, 2, 5) + timedelta(hours=20, minutes=0)
+        tends = self.stat.tendenciesInRow(date, 15, 10)
+        checkTends([0, 0, 6, 0, 6, 0, 6, 0, 0])
+
+        date = datetime(2018, 2, 5) + timedelta(hours=23, minutes=45)
+        tends = self.stat.tendenciesInRow(date, 15, 10)
+        checkTends([0, 2, 0, 2, 1, 2, 0, 0, 1])
+
+        date = datetime(2018, 2, 6) + timedelta(hours=22, minutes=15)
+        tends = self.stat.tendenciesInRow(date, 15, 10)
+        checkTends([0, 1, 6, 2, 0, 1, 0, 2, 0])
+
+        date = datetime(2018, 2, 6) + timedelta(hours=22, minutes=15)
+        tends = self.stat.tendenciesInRow(date, 30, 10)
+        checkTends([0, 0, 3, 0, 3, 0, 3, 0, 0])
+
+        date = datetime(2018, 2, 6) + timedelta(hours=22, minutes=15)
+        tends = self.stat.tendenciesInRow(date, 45, 10)
+        checkTends([0, 0, 3, 0, 2, 0, 2, 0, 0])
 
 if __name__ == '__main__':
     unittest.main()

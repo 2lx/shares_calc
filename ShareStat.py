@@ -18,14 +18,14 @@ class Extremum(Enum):
 
 class Tendency(Enum):
     UNDEFINED = 0
-    MAXRISE   = 1
-    MAXFALL   = 2
-    MINRISE   = 3
-    MINFALL   = 4
+    MINRISE   = 1
+    MINFALL   = 2
+    MAXRISE   = 3
+    MAXFALL   = 4
     ALLRISE   = 5
     ALLFALL   = 6
-    SHRINK    = 7
-    EXPAND    = 8
+    EXPAND    = 7
+    SHRINK    = 8
 
 class PriceKit:
     def __init__(self, openP, highP, lowP, closeP):
@@ -95,61 +95,76 @@ class ShareStat:
 
         return Extremum.NOT
 
-    def tendencyInRow(self, dt, periodMinutes, tendType, maxCount=5):
+    def tendenciesInRow(self, dt, periodMinutes, maxCount=9):
         delta = timedelta(minutes=periodMinutes)
         curDTStart,  curDTEnd    = dt - delta, dt
         preDTStart,  preDTEnd    = curDTStart - delta, curDTStart
         curPriceMin, curPriceMax = self.getMinMaxPriceInterval(curDTStart, curDTEnd)
         prePriceMin, prePriceMax = self.getMinMaxPriceInterval(preDTStart, preDTEnd)
 
+        tendencies = {
+            Tendency.UNDEFINED: 0,
+            Tendency.MINRISE:   0,
+            Tendency.MINFALL:   0,
+            Tendency.MAXRISE:   0,
+            Tendency.MAXFALL:   0,
+            Tendency.ALLRISE:   0,
+            Tendency.ALLFALL:   0,
+            Tendency.EXPAND:    0,
+            Tendency.SHRINK:    0,
+        }
+        count = 0
+
+        def incTends(tends):
+            updated = False
+            nonlocal count
+
+            for tend in tends:
+                if tendencies[tend] == count:
+                    tendencies[tend] += 1
+                    updated = True
+
+            count += 1
+            return updated
+
         def checkTendency():
             if prePriceMax is None or curPriceMax is None:
-                return False
+                return True
 
-            return {
-                Tendency.MAXRISE: prePriceMax <= curPriceMax,
-                Tendency.MINRISE: prePriceMin <= curPriceMin,
-                Tendency.MAXFALL: prePriceMax >= curPriceMax,
-                Tendency.MINFALL: prePriceMin >= curPriceMin,
-                Tendency.ALLRISE: prePriceMin <= curPriceMin and prePriceMax <= curPriceMax,
-                Tendency.ALLFALL: prePriceMin >= curPriceMin and prePriceMax >= curPriceMax,
-                Tendency.SHRINK:  prePriceMin <= curPriceMin and prePriceMax >= curPriceMax,
-                Tendency.EXPAND:  prePriceMin >= curPriceMin and prePriceMax <= curPriceMax,
-            }.get(tendType, False)
+            if prePriceMin < curPriceMin:
+                if prePriceMax  < curPriceMax:
+                    return incTends([Tendency.ALLRISE, Tendency.MINRISE, Tendency.MAXRISE])
+                if prePriceMax == curPriceMax:
+                    return incTends([Tendency.ALLRISE, Tendency.SHRINK, Tendency.MINRISE, Tendency.MAXRISE, Tendency.MAXFALL])
+                if prePriceMax  > curPriceMax:
+                    return incTends([Tendency.MINRISE, Tendency.MAXFALL, Tendency.SHRINK])
 
-        count = 0
+            if prePriceMin == curPriceMin:
+                if prePriceMax  < curPriceMax:
+                    return incTends([Tendency.ALLRISE, Tendency.EXPAND, Tendency.MINRISE, Tendency.MINFALL, Tendency.MAXRISE])
+                if prePriceMax == curPriceMax:
+                    return incTends([Tendency.ALLRISE, Tendency.ALLFALL, Tendency.EXPAND, Tendency.SHRINK, Tendency.MINRISE, Tendency.MINFALL, Tendency.MAXRISE, Tendency.MAXFALL])
+                if prePriceMax  > curPriceMax:
+                    return incTends([Tendency.ALLFALL, Tendency.SHRINK, Tendency.MINRISE, Tendency.MINFALL, Tendency.MAXFALL])
+
+            if prePriceMin > curPriceMin:
+                if prePriceMax  < curPriceMax:
+                    return incTends([Tendency.EXPAND, Tendency.MINFALL, Tendency.MAXRISE])
+                if prePriceMax == curPriceMax:
+                    return incTends([Tendency.EXPAND, Tendency.ALLFALL, Tendency.MINFALL, Tendency.MAXRISE, Tendency.MAXFALL])
+                if prePriceMax  > curPriceMax:
+                    return incTends([Tendency.ALLFALL, Tendency.MINFALL, Tendency.MAXFALL])
+
+
         while count < maxCount and checkTendency():
             curDTStart, curDTEnd = preDTStart, preDTEnd
             preDTStart, preDTEnd = preDTStart - delta, preDTStart
             curPriceMin, curPriceMax = self.getMinMaxPriceInterval(curDTStart, curDTEnd)
             prePriceMin, prePriceMax = self.getMinMaxPriceInterval(preDTStart, preDTEnd)
-            count += 1
 
-        return count
+        return tendencies
 
-    #  def priceRiseInRow(self, date, rowPeriods, periodDays):
-    #      curPrice = self.getPrices(date).get(Price.HIGH)
-    #
-    #      # get price from period [yesterday - periodDays <=> yesterday]
-    #      rdate          = date.replace(hour=0, minute=0, second=0)
-    #      curMin, curMax = self.getMinMaxPriceDays(date, periodDays)
-    #
-    #      if curMax > curPrice:
-    #          return False
-    #
-    #      count = 1
-    #      while count <= rowPeriods:
-    #          rprevdate  = rdate - timedelta(days=periodDays)
-    #          prevMin, prevMax = self.getMinMaxPriceDays(rprevdate, periodDays)
-    #          if prevMax >= curMax:
-    #              return False
-    #
-    #          curMin, curMax = prevMin, prevMax
-    #          count          = count + 1
-    #          rdate          = rprevdate
-    #
-    #      return True
-    #
+
     def getVolatilityDays(self, date, days):
         rdate = date.replace(hour = 0, minute = 0, second = 0)
         rdateprev = rdate - timedelta(days=days)
