@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS Share(
 
 INSERT INTO Share (Name, Abbr)
 SELECT "Advanced Micro Devices, Inc.", "AMD" UNION ALL
+SELECT "Bed Bath & Beyond, Inc.", "BBBY" UNION ALL
 SELECT "Cisco Systems, Inc.", "CSCO";
 
 -- Markets
@@ -40,7 +41,7 @@ SELECT "Акции США (BATS)", "US1";
 CREATE TABLE IF NOT EXISTS Quotation(
     MarketId INTEGER,
     ShareId INTEGER,
-    IntervalMin varchar(5),
+    Interval varchar(5),
     DateTime INTEGER,
     OpenPrice REAL,
     HighPrice REAL,
@@ -50,6 +51,7 @@ CREATE TABLE IF NOT EXISTS Quotation(
     FOREIGN KEY (MarketId) REFERENCES Market(Id),
     FOREIGN KEY (ShareId) REFERENCES Share(Id)
 );
-CREATE UNIQUE INDEX IF NOT EXISTS QuotationUniqueShareMarketIntervalTime ON Quotation(MarketId, ShareId, IntervalMin, DateTime);
+CREATE UNIQUE INDEX IF NOT EXISTS QuotationUniqueShareMarketIntervalTime ON Quotation(MarketId, ShareId, Interval, DateTime);
+CREATE INDEX IF NOT EXISTS QuotationMarketShareInterval ON Quotation(MarketId, ShareId, Interval);
 
 

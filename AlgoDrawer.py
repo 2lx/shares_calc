@@ -17,7 +17,7 @@ def drawAlgoInfo(info, market, share):
         joinstyle="bevel",
         capstyle="butt",
         step="mid",
-        label="AMD shares price")
+        label="{0} shares price".format(share,))
     ax1.fill_between(info.axisDT, 0, info.fnSoldPrice,
         facecolor="#bdc3c7",
         edgecolor="#7f8c8d",

@@ -5,7 +5,9 @@ from datetime import datetime, timedelta
 import unittest
 
 class TestShareStat(unittest.TestCase):
-    def setUp(self):
+
+    @classmethod
+    def setUpClass(self):
         self.stat = ShareStat("shares.db", "SPBEX", "AMD")
 
     def test_getPrice(self):
