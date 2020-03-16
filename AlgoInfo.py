@@ -12,6 +12,13 @@ class AlgoInfo:
         self.fnSoldPrice  = []
         self.fnCapital    = []
 
+        self.axisBuyPrice = []
+        self.axisSellSucc = []
+        self.axisSellFail = []
+        self.fnBuyPrice   = []
+        self.fnSellSucc   = []
+        self.fnSellFail   = []
+
     def append(self, date, priceKit, state, volatility):
         lowPrice  = priceKit.get(Price.LOW)
         highPrice = priceKit.get(Price.HIGH)
@@ -24,3 +31,17 @@ class AlgoInfo:
         self.fnVolatility.append(volatility)
         self.fnSoldPrice.append(state.exitPrice)
         self.fnCapital.append(state.cash + (highPrice + lowPrice) * state.shareQty / 2.0)
+        if state.buyResult != 0:
+            self.fnBuyPrice.append(state.buyPrice)
+            self.axisBuyPrice.append(date)
+            state.buyResult = 0
+
+        if state.sellResult != 0:
+            if state.sellResult > 0:
+                self.fnSellSucc.append(state.sellPrice)
+                self.axisSellSucc.append(date)
+            else:
+                self.fnSellFail.append(state.sellPrice)
+                self.axisSellFail.append(date)
+            state.sellResult = 0
+

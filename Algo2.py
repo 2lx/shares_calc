@@ -38,19 +38,8 @@ class Algo2:
             if priceKit is not None:
                 volatility15 = self.stat.getVolatilityDays(date, 15)
 
-                if state.shareQty == 0: #and (date - lastSell).seconds >= 15 * 60:
-                    #  minPrice1,  maxPrice1  = self.stat.getMinMaxPriceDays(date, 1)
-                    #  minPrice14, maxPrice14 = self.stat.getMinMaxPriceDays(date, 14)
-                    #  if self.stat.getPeriodExtremum(date, 7 * 24 * 60) == Extremum.MAXIMUM and \
-                    #  if self.stat.priceRiseInRow(date, 2, 7) and minPrice1 != minPrice14:
-                    #  tends14days = self.stat.tendsRowInterval(date, 14 * 24 * 60)
-                    #  tends7days = self.stat.tendsRow(date, deltaDays=7)
-                    #  tends2days = self.stat.tendsRow(date, deltaDays=2)
-                    #
-                    #  #  if tends7days[Tendency.MINFALL] == 0 and \
-                    #  if (tends2days[Tendency.MAXRISE] >= 3 or tends7days[Tendency.MAXRISE] >= 2):
-                    if self.signal1(date):
-                        state.buy(date, priceKit, volatility15)
+                if state.shareQty == 0 and self.signal1(date):
+                    state.buy(date, priceKit, volatility15)
                 elif priceKit.get(Price.LOW) <= state.exitPrice:
                     state.sell(date, priceKit)
                     lastSell = date

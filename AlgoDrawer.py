@@ -26,6 +26,21 @@ def drawAlgoInfo(info, market, share):
         step="mid",
         label="exit price")
     ax1.axis([minDay, maxDay, 0, max(info.fnHighPrice) + 5])
+    ax1.plot(info.axisBuyPrice, info.fnBuyPrice, "bo",
+        color="#2980b9",
+        marker="^",
+        markersize=10,
+        markeredgecolor="#000000")
+    ax1.plot(info.axisSellSucc, info.fnSellSucc, "bo",
+        color="#2ecc71",
+        marker="v",
+        markersize=10,
+        markeredgecolor="#000000")
+    ax1.plot(info.axisSellFail, info.fnSellFail, "bo",
+        color="#e74c3c",
+        marker="v",
+        markersize=10,
+        markeredgecolor="#000000")
     ax1.set_ylabel("USD")
     ax1.legend()
     ax1.tick_params(top=True, right=True, left=True, bottom=True, labeltop=True, labelright=True)
