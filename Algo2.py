@@ -8,6 +8,24 @@ class Algo2:
     def __init__(self, shareStat):
         self.stat = shareStat
         self.info = AlgoInfo()
+        self.cache2d = {}
+        self.cache7d = {}
+        self.cache15m = {}
+
+    def signal1(self, date):
+        whdate = date.replace(hour = 0, minute = 0, second = 0)
+        if whdate not in self.cache2d:
+            self.cache2d[whdate] = self.stat.tendsRow(date, deltaDays=2)
+
+        if whdate not in self.cache7d:
+            self.cache7d[whdate] = self.stat.tendsRow(date, deltaDays=7)
+
+        #  if date not in self.cache15m:
+        #      self.cache15m[date] = self.stat.tendsRow(date, deltaMinutes=15)
+
+        #  return self.cache15m[date][Tendency.MAXRISE] >= 1 and \
+        #      (self.cache2d[whdate][Tendency.MAXRISE] >= 3 or self.cache7d[whdate][Tendency.MAXRISE] >= 2)
+        return (self.cache2d[whdate][Tendency.MAXRISE] >= 3 or self.cache7d[whdate][Tendency.MAXRISE] >= 2)
 
     def process(self, startDate, endDate, cash):
         date     = startDate
@@ -26,11 +44,12 @@ class Algo2:
                     #  if self.stat.getPeriodExtremum(date, 7 * 24 * 60) == Extremum.MAXIMUM and \
                     #  if self.stat.priceRiseInRow(date, 2, 7) and minPrice1 != minPrice14:
                     #  tends14days = self.stat.tendsRowInterval(date, 14 * 24 * 60)
-                    tends7days = self.stat.tendsRow(date, deltaDays=7)
-                    tends2days = self.stat.tendsRow(date, deltaDays=2)
-
-                    #  if tends7days[Tendency.MINFALL] == 0 and \
-                    if (tends2days[Tendency.MAXRISE] >= 3 or tends7days[Tendency.MAXRISE] >= 2):
+                    #  tends7days = self.stat.tendsRow(date, deltaDays=7)
+                    #  tends2days = self.stat.tendsRow(date, deltaDays=2)
+                    #
+                    #  #  if tends7days[Tendency.MINFALL] == 0 and \
+                    #  if (tends2days[Tendency.MAXRISE] >= 3 or tends7days[Tendency.MAXRISE] >= 2):
+                    if self.signal1(date):
                         state.buy(date, priceKit, volatility15)
                 elif priceKit.get(Price.LOW) <= state.exitPrice:
                     state.sell(date, priceKit)

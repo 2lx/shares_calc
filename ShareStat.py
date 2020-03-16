@@ -97,9 +97,6 @@ class ShareStat:
         return Extremum.NOT
 
     def getPrevMinMax(self, dt, deltaMinutes=None, deltaDays=None):
-        if deltaDays is not None:
-            dt = dt.replace(hour = 0, minute = 0, second = 0)
-
         def getPrices(dt):
             if deltaDays is not None:
                 return self.getMinMaxPriceDays(dt, deltaDays)
@@ -124,9 +121,13 @@ class ShareStat:
         return dtStart, priceMin, priceMax
 
     def tendsRow(self, dtEnd, deltaDays=None, deltaMinutes=None, maxCount=9):
+        dt = dtEnd
+        if deltaDays is not None:
+            dt = dt.replace(hour = 0, minute = 0, second = 0)
+
         tends = TendsSet(maxCount)
 
-        curDTStart, curPriceMin, curPriceMax = self.getPrevMinMax(dtEnd, deltaDays=deltaDays, deltaMinutes=deltaMinutes)
+        curDTStart, curPriceMin, curPriceMax = self.getPrevMinMax(dt, deltaDays=deltaDays, deltaMinutes=deltaMinutes)
         preDTStart, prePriceMin, prePriceMax = self.getPrevMinMax(curDTStart, deltaDays=deltaDays, deltaMinutes=deltaMinutes)
 
         while tends.proceedTend(curPriceMin, curPriceMax, prePriceMin, prePriceMax):
