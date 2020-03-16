@@ -3,6 +3,7 @@ import sys
 from datetime import datetime, timedelta
 from dateutil import parser
 from enum     import Enum
+from Tendency import *
 
 class Price(Enum):
     OPEN  = 0
@@ -16,23 +17,12 @@ class Extremum(Enum):
     MAXIMUM = 2
     BOTH    = 3
 
-class Tendency(Enum):
-    UNDEFINED = 0
-    MINRISE   = 1
-    MINFALL   = 2
-    MAXRISE   = 3
-    MAXFALL   = 4
-    ALLRISE   = 5
-    ALLFALL   = 6
-    EXPAND    = 7
-    SHRINK    = 8
-
 class PriceKit:
     def __init__(self, openP, highP, lowP, closeP):
-        self.prices = [ openP, highP, lowP, closeP ]
+        self.prices15 = [ openP, highP, lowP, closeP ]
 
     def get(self, price_type):
-        return self.prices[price_type.value]
+        return self.prices15[price_type.value]
 
 class ShareStat:
     def __init__(self, database, market, share):
@@ -46,8 +36,8 @@ class ShareStat:
         rows = self.cur.execute('''SELECT rowid FROM Share WHERE Abbr = ?''', (share,))
         self.shareId = self.cur.fetchone()[0]
 
-        # precalculate prices
-        self.prices = {}
+        # precalculate prices15
+        self.prices15 = {}
         rows = self.cur.execute('''SELECT DATETIME(DateTime, '-3 hours') as DateTime, OpenPrice, HighPrice, LowPrice, ClosePrice
                                    FROM Quotation
                                    WHERE MarketId = ?
@@ -57,11 +47,16 @@ class ShareStat:
 
 
         for row in rows:
-            self.prices[parser.parse(row[0])] = PriceKit(row[1], row[2], row[3], row[4])
+            date = parser.parse(row[0])
+            self.prices15[date] = PriceKit(row[1], row[2], row[3], row[4])
 
         # precalculate volatilities 15 days
-        self.volatDay = {}
-        rows = self.cur.execute('''SELECT date(DATETIME(DateTime, '-3 hours')) AS DateTime, min(LowPrice) AS minPrice, max(HighPrice) AS maxPrice
+        self.pricesDay = {}
+        rows = self.cur.execute('''SELECT date(DATETIME(DateTime, '-3 hours')) AS DateTime,
+                                        min(LowPrice) AS minPrice,
+                                        max(HighPrice) AS maxPrice,
+                                        min(DATETIME(DateTime, '-3 hours')) AS MinDateTime,
+                                        max(DATETIME(DateTime, '-3 hours')) AS MaxDateTime
                                    FROM Quotation
                                    WHERE MarketId = ?
                                        AND ShareId = ?
@@ -71,14 +66,15 @@ class ShareStat:
 
         for row in rows:
             date = parser.parse(row[0])
-            self.volatDay[date] = (row[1], row[2],)
+            dateMin, dateMax = parser.parse(row[3]), parser.parse(row[4])
+            self.pricesDay[date] = PriceKit(self.prices15[dateMin].get(Price.OPEN), row[2], row[1], self.prices15[dateMax].get(Price.CLOSE))
 
     def timeDelta(self):
         return self.delta
 
     def getPrices(self, date):
-        if date in self.prices:
-            return self.prices[date]
+        if date in self.prices15:
+            return self.prices15[date]
 
         return None
 
@@ -100,75 +96,44 @@ class ShareStat:
 
         return Extremum.NOT
 
-    def tendenciesInRow(self, dt, periodMinutes, maxCount=9):
-        delta = timedelta(minutes=periodMinutes)
-        curDTStart,  curDTEnd    = dt - delta, dt
-        preDTStart,  preDTEnd    = curDTStart - delta, curDTStart
-        curPriceMin, curPriceMax = self.getMinMaxPriceInterval(curDTStart, curDTEnd)
-        prePriceMin, prePriceMax = self.getMinMaxPriceInterval(preDTStart, preDTEnd)
+    def getPrevMinMax(self, dt, deltaMinutes=None, deltaDays=None):
+        if deltaDays is not None:
+            dt = dt.replace(hour = 0, minute = 0, second = 0)
 
-        tendencies = {
-            Tendency.UNDEFINED: 0,
-            Tendency.MINRISE:   0,
-            Tendency.MINFALL:   0,
-            Tendency.MAXRISE:   0,
-            Tendency.MAXFALL:   0,
-            Tendency.ALLRISE:   0,
-            Tendency.ALLFALL:   0,
-            Tendency.EXPAND:    0,
-            Tendency.SHRINK:    0,
-        }
-        count = 0
+        def getPrices(dt):
+            if deltaDays is not None:
+                return self.getMinMaxPriceDays(dt, deltaDays)
 
-        def incTends(tends):
-            updated = False
-            nonlocal count
+            if deltaMinutes is not None:
+                return self.getMinMaxPriceMinutes(dt - timedelta(minutes=deltaMinutes), dt)
 
-            for tend in tends:
-                if tendencies[tend] == count:
-                    tendencies[tend] += 1
-                    updated = True
+        def prevDT(dt):
+            if deltaDays is not None:
+                return dt - timedelta(days=deltaDays)
 
-            count += 1
-            return updated
+            if deltaMinutes is not None:
+                return dt - timedelta(minutes=deltaMinutes)
 
-        def checkTendency():
-            if prePriceMax is None or curPriceMax is None:
-                return True
+        priceMin, priceMax = getPrices(dt)
+        dtStart = prevDT(dt)
 
-            if prePriceMin < curPriceMin:
-                if prePriceMax  < curPriceMax:
-                    return incTends([Tendency.ALLRISE, Tendency.MINRISE, Tendency.MAXRISE])
-                if prePriceMax == curPriceMax:
-                    return incTends([Tendency.ALLRISE, Tendency.SHRINK, Tendency.MINRISE, Tendency.MAXRISE, Tendency.MAXFALL])
-                if prePriceMax  > curPriceMax:
-                    return incTends([Tendency.MINRISE, Tendency.MAXFALL, Tendency.SHRINK])
+        while (priceMin is None) or (priceMax is None):
+            priceMin, priceMax = getPrices(dtStart)
+            dtStart = prevDT(dtStart)
 
-            if prePriceMin == curPriceMin:
-                if prePriceMax  < curPriceMax:
-                    return incTends([Tendency.ALLRISE, Tendency.EXPAND, Tendency.MINRISE, Tendency.MINFALL, Tendency.MAXRISE])
-                if prePriceMax == curPriceMax:
-                    return incTends([Tendency.ALLRISE, Tendency.ALLFALL, Tendency.EXPAND, Tendency.SHRINK, Tendency.MINRISE, Tendency.MINFALL, Tendency.MAXRISE, Tendency.MAXFALL])
-                if prePriceMax  > curPriceMax:
-                    return incTends([Tendency.ALLFALL, Tendency.SHRINK, Tendency.MINRISE, Tendency.MINFALL, Tendency.MAXFALL])
+        return dtStart, priceMin, priceMax
 
-            if prePriceMin > curPriceMin:
-                if prePriceMax  < curPriceMax:
-                    return incTends([Tendency.EXPAND, Tendency.MINFALL, Tendency.MAXRISE])
-                if prePriceMax == curPriceMax:
-                    return incTends([Tendency.EXPAND, Tendency.ALLFALL, Tendency.MINFALL, Tendency.MAXRISE, Tendency.MAXFALL])
-                if prePriceMax  > curPriceMax:
-                    return incTends([Tendency.ALLFALL, Tendency.MINFALL, Tendency.MAXFALL])
+    def tendsRow(self, dtEnd, deltaDays=None, deltaMinutes=None, maxCount=9):
+        tends = TendsSet(maxCount)
 
+        curDTStart, curPriceMin, curPriceMax = self.getPrevMinMax(dtEnd, deltaDays=deltaDays, deltaMinutes=deltaMinutes)
+        preDTStart, prePriceMin, prePriceMax = self.getPrevMinMax(curDTStart, deltaDays=deltaDays, deltaMinutes=deltaMinutes)
 
-        while count < maxCount and checkTendency():
-            curDTStart, curDTEnd = preDTStart, preDTEnd
-            preDTStart, preDTEnd = preDTStart - delta, preDTStart
-            curPriceMin, curPriceMax = self.getMinMaxPriceInterval(curDTStart, curDTEnd)
-            prePriceMin, prePriceMax = self.getMinMaxPriceInterval(preDTStart, preDTEnd)
+        while tends.proceedTend(curPriceMin, curPriceMax, prePriceMin, prePriceMax):
+            curDTStart, curPriceMin, curPriceMax = preDTStart, prePriceMin, prePriceMax
+            preDTStart, prePriceMin, prePriceMax = self.getPrevMinMax(preDTStart, deltaDays=deltaDays, deltaMinutes=deltaMinutes)
 
-        return tendencies
-
+        return tends.tends
 
     def getVolatilityDays(self, date, days):
         rdate = date.replace(hour = 0, minute = 0, second = 0)
@@ -177,8 +142,9 @@ class ShareStat:
         volSum = 0
         count = 0
         while rdateprev < rdate:
-            if rdateprev in self.volatDay:
-                minPrice, maxPrice = self.volatDay[rdateprev]
+            if rdateprev in self.pricesDay:
+                priceKit = self.pricesDay[rdateprev]
+                minPrice, maxPrice = priceKit.get(Price.LOW), priceKit.get(Price.HIGH)
                 volSum += abs(maxPrice - minPrice)
                 count += 1
 
@@ -206,27 +172,35 @@ class ShareStat:
     #      return round(avgVolatility / len(rows), 4)
 
 
-    def getMinMaxPriceDays(self, date, days):
-        rdate = date.replace(hour = 0, minute = 0, second = 0)
-        rdateprev = rdate - timedelta(days=days)
+    def getMinMaxPriceDays(self, dtEnd, days):
+        dateEnd = dtEnd.replace(hour = 0, minute = 0, second = 0)
+        date = dateEnd - timedelta(days=days)
 
         minResult, maxResult = 999999, 0
-        while rdateprev < rdate:
-            if rdateprev in self.volatDay:
-                minPrice, maxPrice   = self.volatDay[rdateprev]
-                minResult, maxResult = min(minResult, minPrice), max(maxResult, maxPrice)
+        updated = False
 
-            rdateprev += timedelta(days=1)
+        while date < dateEnd:
+            if date in self.pricesDay:
+                priceKit = self.pricesDay[date]
+                minPrice, maxPrice   = priceKit.get(Price.LOW), priceKit.get(Price.HIGH)
+                minResult, maxResult = min(minResult, minPrice), max(maxResult, maxPrice)
+                updated              = True
+
+            date += timedelta(days=1)
+
+        if not updated:
+            return None, None
 
         return minResult, maxResult
 
-    def getMinMaxPriceInterval(self, dtStart, dtEnd):
+    def getMinMaxPriceMinutes(self, dtStart, dtEnd):
         date = dtStart
         curMin, curMax = 999999, 0
         updated = False
+
         while date < dtEnd:
-            if date in self.prices:
-                priceKit       = self.prices[date]
+            if date in self.prices15:
+                priceKit       = self.prices15[date]
                 curMin, curMax = min(curMin, priceKit.get(Price.LOW)), max(curMax, priceKit.get(Price.HIGH))
                 updated        = True
 

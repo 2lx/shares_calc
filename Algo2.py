@@ -25,9 +25,9 @@ class Algo2:
                     #  minPrice14, maxPrice14 = self.stat.getMinMaxPriceDays(date, 14)
                     #  if self.stat.getPeriodExtremum(date, 7 * 24 * 60) == Extremum.MAXIMUM and \
                     #  if self.stat.priceRiseInRow(date, 2, 7) and minPrice1 != minPrice14:
-                    #  tends14days = self.stat.tendenciesInRow(date, 14 * 24 * 60)
-                    tends7days = self.stat.tendenciesInRow(date, 7 * 24 * 60)
-                    tends2days = self.stat.tendenciesInRow(date, 2 * 24 * 60)
+                    #  tends14days = self.stat.tendsRowInterval(date, 14 * 24 * 60)
+                    tends7days = self.stat.tendsRow(date, deltaDays=7)
+                    tends2days = self.stat.tendsRow(date, deltaDays=2)
 
                     #  if tends7days[Tendency.MINFALL] == 0 and \
                     if (tends2days[Tendency.MAXRISE] >= 3 or tends7days[Tendency.MAXRISE] >= 2):
