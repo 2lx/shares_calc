@@ -1,5 +1,6 @@
 csv/*.csv
 csv/*.csv.out
 __pycache__/*
+pic/*
 *.db
 tags

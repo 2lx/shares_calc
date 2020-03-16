@@ -36,8 +36,9 @@ class PriceKit:
 
 class ShareStat:
     def __init__(self, database, market, share):
-        self.conn   = sqlite3.connect(database)
-        self.cur    = self.conn.cursor()
+        self.delta = timedelta(hours=-3)
+        self.conn  = sqlite3.connect(database)
+        self.cur   = self.conn.cursor()
 
         rows = self.cur.execute('''SELECT rowid FROM Market WHERE Abbr = ?''', (market,))
         self.marketId = self.cur.fetchone()[0]
@@ -47,29 +48,33 @@ class ShareStat:
 
         # precalculate prices
         self.prices = {}
-        rows = self.cur.execute('''SELECT DateTime, OpenPrice, HighPrice, LowPrice, ClosePrice
+        rows = self.cur.execute('''SELECT DATETIME(DateTime, '-3 hours') as DateTime, OpenPrice, HighPrice, LowPrice, ClosePrice
                                    FROM Quotation
                                    WHERE MarketId = ?
                                        AND ShareId = ?
                                        AND Interval = "15"
                                    ORDER BY DateTime ASC''', (self.marketId, self.shareId,))
 
+
         for row in rows:
             self.prices[parser.parse(row[0])] = PriceKit(row[1], row[2], row[3], row[4])
 
         # precalculate volatilities 15 days
         self.volatDay = {}
-        rows = self.cur.execute('''SELECT date(DateTime), min(LowPrice), max(HighPrice)
+        rows = self.cur.execute('''SELECT date(DATETIME(DateTime, '-3 hours')) AS DateTime, min(LowPrice) AS minPrice, max(HighPrice) AS maxPrice
                                    FROM Quotation
                                    WHERE MarketId = ?
                                        AND ShareId = ?
                                        AND Interval = "15"
-                                   GROUP BY date(DateTime)
-                                   ORDER BY date(DateTime) ASC''', (self.marketId, self.shareId,))
+                                   GROUP BY date(DATETIME(DateTime, '-3 hours'))
+                                   ORDER BY DateTime ASC''', (self.marketId, self.shareId,))
 
         for row in rows:
             date = parser.parse(row[0])
             self.volatDay[date] = (row[1], row[2],)
+
+    def timeDelta(self):
+        return self.delta
 
     def getPrices(self, date):
         if date in self.prices:
@@ -179,26 +184,26 @@ class ShareStat:
 
             rdateprev += timedelta(days=1)
 
-        return round(volSum / count, 4)
+        return 0 if count == 0 else round(volSum / count, 4)
 
-    def getVolatilityDaysInterval(self, dtStart, dtEnd):
-        rows = self.cur.execute('''SELECT date(DateTime), min(LowPrice), max(HighPrice)
-                                   FROM Quotation
-                                   WHERE MarketId = ?
-                                       AND ShareId = ?
-                                       AND Interval = "15"
-                                       AND DateTime >= ? AND DateTime < ?
-                                   GROUP BY date(DateTime)
-                                   ORDER BY date(DateTime) ASC''', (self.marketId, self.shareId, dtStart, dtEnd))
-        rows = self.cur.fetchall()
-        if len(rows) < 1:
-            return 0
-
-        avgVolatility = 0
-        for row in rows:
-            avgVolatility += abs(row[2] - row[1])
-
-        return round(avgVolatility / len(rows), 4)
+    #  def getVolatilityDaysInterval(self, dtStart, dtEnd):
+    #      rows = self.cur.execute('''SELECT date(DATETIME(DateTime, '-3 hours')) AS DateTime, min(LowPrice), max(HighPrice)
+    #                                 FROM Quotation
+    #                                 WHERE MarketId = ?
+    #                                     AND ShareId = ?
+    #                                     AND Interval = "15"
+    #                                     AND DateTime >= ? AND DateTime < ?
+    #                                 GROUP BY date(DATETIME(DateTime, '-3 hours'))
+    #                                 ORDER BY DateTime ASC''', (self.marketId, self.shareId, dtStart, dtEnd))
+    #      rows = self.cur.fetchall()
+    #      if len(rows) < 1:
+    #          return 0
+    #
+    #      avgVolatility = 0
+    #      for row in rows:
+    #          avgVolatility += abs(row[2] - row[1])
+    #
+    #      return round(avgVolatility / len(rows), 4)
 
 
     def getMinMaxPriceDays(self, date, days):
