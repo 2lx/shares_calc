@@ -1,7 +1,7 @@
 from AlgoInfo import AlgoInfo
 
 import matplotlib.pyplot as plt
-from datetime import datetime, timedelta
+import matplotlib.dates as mdates
 
 def drawAlgoInfo(info, market, share):
     minDay, maxDay = min(info.axisDT).date(), max(info.axisDT).date()
@@ -12,12 +12,11 @@ def drawAlgoInfo(info, market, share):
     fig.tight_layout()
     plt.subplots_adjust(hspace=0.09, left=0.07, right=0.94, bottom=0.04, top=0.935)
 
-    #  axis_major_ticks = []
-    #  dt = info.axisDT[0].replace(hour=0,minute=0,second=0)
-    #  while dt < info.axisDT[-1]:
-    #      axis_major_ticks.append(dt)
-    #      dt += timedelta(days=190)
-
+    for nn, ax in enumerate(axes):
+        locator   = mdates.AutoDateLocator(minticks=15, maxticks=45)
+        formatter = mdates.ConciseDateFormatter(locator)
+        ax.xaxis.set_major_locator(locator)
+        ax.xaxis.set_major_formatter(formatter)
 
     ax1.fill_between(info.axisDT, info.fnLowPrice, info.fnHighPrice,
         facecolor="#2980b9",
@@ -38,22 +37,26 @@ def drawAlgoInfo(info, market, share):
         color="#2980b9",
         marker=6,
         markersize=12,
-        markeredgecolor="#000000")
+        markeredgecolor="#000000",
+        label="moment of purchase")
     ax1.plot(info.axisSellSucc, info.fnSellSucc, "bo",
         color="#2ecc71",
         marker=7,
         markersize=12,
-        markeredgecolor="#000000")
+        markeredgecolor="#000000",
+        label="moment of successful sell")
     ax1.plot(info.axisSellFail, info.fnSellFail, "bo",
         color="#e74c3c",
         marker=7,
         markersize=12,
-        markeredgecolor="#000000")
+        markeredgecolor="#000000",
+        label="moment of failed sell")
     ax1.set_ylabel("USD")
     ax1.legend()
-    ax1.tick_params(top=True, right=True, left=True, bottom=True, labeltop=True, labelright=True)
     ax1.minorticks_on()
-    ax1.grid(True, which="both", axis="x", linestyle="--", alpha=0.5)
+    ax1.grid(True, which="major", axis="both", linestyle="--", alpha=0.6)
+    ax1.grid(True, which="minor", axis="x", linestyle=":", alpha=0.7)
+    ax1.tick_params(top=True, right=True, left=True, bottom=True, labeltop=True, labelright=True)
 
     ax2.fill_between(info.axisDT, 0, info.fnCount,
         facecolor="#fda7df",
@@ -65,8 +68,8 @@ def drawAlgoInfo(info, market, share):
     ax2.axis([minDay, maxDay, min(info.fnCount), max(info.fnCount) + 5])
     ax2.set_ylabel("Amount")
     ax2.legend()
+    ax2.grid(True, which="major", axis="both", linestyle="--", alpha=0.6)
     ax2.tick_params(top=True, right=True, left=True, bottom=True, labeltop=True, labelright=True)
-    ax2.grid(True, which="major", axis="both", linestyle="--", alpha=0.5)
 
     ax3.plot(info.axisDT, info.fnCapital,
         color="#c0392b",
@@ -74,9 +77,8 @@ def drawAlgoInfo(info, market, share):
     ax3.axis([minDay, maxDay, 0, max(info.fnCapital) + 100])
     ax3.set_ylabel("USD")
     ax3.legend()
+    ax3.grid(True, which="major", axis="both", linestyle="--", alpha=0.6)
     ax3.tick_params(top=True, right=True, left=True, bottom=True, labeltop=True, labelright=True)
-    ax3.grid(True, which="major", axis="both", linestyle="--", alpha=0.5)
 
     fig.align_labels()
-
     plt.show()
