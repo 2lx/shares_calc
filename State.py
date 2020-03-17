@@ -19,8 +19,8 @@ class State:
         self.exitPrice   = price - self.vltCoeff * volat
         self.shareQty    = self.cash // price
         self.cash        = self.cash - price * self.shareQty * (1 + self.commission)
-        print("Buy : at {0} price {1:0>5.2f}$ X {2:0>4n}"
-            .format(date, price, self.shareQty))
+        #  print("Buy : at {0} price {1:0>5.2f}$ X {2:0>4n}"
+        #      .format(date, price, self.shareQty))
 
     def updateExitPrice(self, priceKit, volat):
         highPrice      = priceKit.get(Price.HIGH)
@@ -36,6 +36,6 @@ class State:
         self.sellResult = 1 if sellPrice > self.buyPrice else -1
         self.sellPrice  = sellPrice
 
-        success     = "+" if sellPrice > self.buyPrice else ""
-        print("Sell: at {0} price {1:0>5.2f}$, cash {2:0>8.2f} {3}"
-                .format(date, sellPrice, self.cash, success))
+        #  success     = "+" if sellPrice > self.buyPrice else ""
+        #  print("Sell: at {0} price {1:0>5.2f}$, cash {2:0>8.2f} {3}"
+        #          .format(date, sellPrice, self.cash, success))

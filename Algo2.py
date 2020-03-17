@@ -8,24 +8,30 @@ class Algo2:
     def __init__(self, shareStat):
         self.stat = shareStat
         self.info = AlgoInfo()
-        self.cache2d = {}
-        self.cache7d = {}
-        self.cache15m = {}
+        self.tends2d = {}
+        self.tends7d = {}
+        self.tends15m = {}
+        self.tends60m = {}
 
-    def signal1(self, date):
-        whdate = date.replace(hour = 0, minute = 0, second = 0)
-        if whdate not in self.cache2d:
-            self.cache2d[whdate] = self.stat.tendsRow(date, deltaDays=2)
+    def buySignal1(self, date):
+        wddate = date.replace(hour = 0, minute = 0, second = 0)
+        whdate = date.replace(minute = 0, second = 0)
 
-        if whdate not in self.cache7d:
-            self.cache7d[whdate] = self.stat.tendsRow(date, deltaDays=7)
+        if wddate not in self.tends2d:
+            self.tends2d[wddate] = self.stat.tendsRow(date, deltaDays=2)
 
-        #  if date not in self.cache15m:
-        #      self.cache15m[date] = self.stat.tendsRow(date, deltaMinutes=15)
+        if wddate not in self.tends7d:
+            self.tends7d[wddate] = self.stat.tendsRow(date, deltaDays=7)
 
-        #  return self.cache15m[date][Tendency.MAXRISE] >= 1 and \
-        #      (self.cache2d[whdate][Tendency.MAXRISE] >= 3 or self.cache7d[whdate][Tendency.MAXRISE] >= 2)
-        return (self.cache2d[whdate][Tendency.MAXRISE] >= 3 or self.cache7d[whdate][Tendency.MAXRISE] >= 2)
+        if date not in self.tends15m:
+            self.tends15m[date] = self.stat.tendsRow(date, deltaMinutes=15)
+
+        #  if whdate not in self.tends60m:
+        #      self.tends60m[whdate] = self.stat.tendsRow(date, deltaMinutes=60)
+
+        return self.tends15m[date][Tendency.MINRISE] >= 2 and \
+            (self.tends2d[wddate][Tendency.MAXRISE] >= 3 or self.tends7d[wddate][Tendency.MAXRISE] >= 1)
+        #  return (self.tends2d[wddate][Tendency.MAXRISE] >= 3 or self.tends7d[wddate][Tendency.MAXRISE] >= 2)
 
     def process(self, startDate, endDate, cash):
         date     = startDate
@@ -38,7 +44,7 @@ class Algo2:
             if priceKit is not None:
                 volatility15 = self.stat.getVolatilityDays(date, 15)
 
-                if state.shareQty == 0 and self.signal1(date):
+                if state.shareQty == 0 and self.buySignal1(date):
                     state.buy(date, priceKit, volatility15)
                 elif priceKit.get(Price.LOW) <= state.exitPrice:
                     state.sell(date, priceKit)
