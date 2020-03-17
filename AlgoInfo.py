@@ -3,12 +3,14 @@ from ShareStat import Price
 
 class AlgoInfo:
     def __init__(self):
+        self.axisGlobal   = []
+        self.fnMarketClose = []
+
         self.axisDT       = []
         self.fnLowPrice   = []
         self.fnHighPrice  = []
         self.fnCount      = []
         self.fnCash       = []
-        self.fnVolatility = []
         self.fnSoldPrice  = []
         self.fnCapital    = []
 
@@ -18,8 +20,14 @@ class AlgoInfo:
         self.fnBuyPrice   = []
         self.fnSellSucc   = []
         self.fnSellFail   = []
+        self.fnVol15Days  = []
+        self.fnVol60MinP  = []
 
-    def append(self, date, priceKit, state, volatility):
+    def appendGlobal(self, date, marketOpen):
+        self.axisGlobal.append(date)
+        self.fnMarketClose.append(not marketOpen)
+
+    def append(self, date, priceKit, state, volatility, vol60Perc):
         lowPrice  = priceKit.get(Price.LOW)
         highPrice = priceKit.get(Price.HIGH)
 
@@ -28,7 +36,8 @@ class AlgoInfo:
         self.fnHighPrice.append(highPrice)
         self.fnCount.append(state.shareQty)
         self.fnCash.append(state.cash)
-        self.fnVolatility.append(volatility)
+        self.fnVol15Days.append(volatility)
+        self.fnVol60MinP.append(vol60Perc * 100.0)
         self.fnSoldPrice.append(state.exitPrice)
         self.fnCapital.append(state.cash + (highPrice + lowPrice) * state.shareQty / 2.0)
         if state.buyResult != 0:

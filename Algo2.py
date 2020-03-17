@@ -41,6 +41,7 @@ class Algo2:
         while date < endDate:
             priceKit = self.stat.getPrices(date)
 
+            self.info.appendGlobal(date, priceKit is not None)
             if priceKit is not None:
                 volatility15 = self.stat.getVolatilityDays(date, 15)
 
@@ -53,7 +54,12 @@ class Algo2:
                 if state.shareQty > 0:
                     state.updateExitPrice(priceKit, volatility15)
 
-                self.info.append(date, priceKit, state, volatility15)
+                volatMin = self.stat.getVolatilityMinutes(date - timedelta(minutes=60), date)
+                vol60Perc = volatMin / self.stat.getPrices(date).get(Price.OPEN)
+                if vol60Perc > 1:
+                    vol60Perc = 1
+
+                self.info.append(date, priceKit, state, volatility15, vol60Perc)
 
             date += timedelta(minutes=15)
 

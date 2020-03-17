@@ -153,25 +153,29 @@ class ShareStat:
 
         return 0 if count == 0 else round(volSum / count, 4)
 
-    #  def getVolatilityDaysInterval(self, dtStart, dtEnd):
-    #      rows = self.cur.execute('''SELECT date(DATETIME(DateTime, '-3 hours')) AS DateTime, min(LowPrice), max(HighPrice)
-    #                                 FROM Quotation
-    #                                 WHERE MarketId = ?
-    #                                     AND ShareId = ?
-    #                                     AND Interval = "15"
-    #                                     AND DateTime >= ? AND DateTime < ?
-    #                                 GROUP BY date(DATETIME(DateTime, '-3 hours'))
-    #                                 ORDER BY DateTime ASC''', (self.marketId, self.shareId, dtStart, dtEnd))
-    #      rows = self.cur.fetchall()
-    #      if len(rows) < 1:
-    #          return 0
-    #
-    #      avgVolatility = 0
-    #      for row in rows:
-    #          avgVolatility += abs(row[2] - row[1])
-    #
-    #      return round(avgVolatility / len(rows), 4)
+    def getVolatilityMinutes(self, dtStart, dtEnd):
+        rows = self.cur.execute('''SELECT DateTime, min(LowPrice), max(HighPrice)
+                                   FROM Quotation
+                                   WHERE MarketId = ?
+                                       AND ShareId = ?
+                                       AND Interval = "15"
+                                       AND DateTime >= ? AND DateTime < ?
+                                   ORDER BY DateTime ASC''', (self.marketId, self.shareId, dtStart - self.timeDelta(), dtEnd - self.timeDelta()))
+        rows = self.cur.fetchall()
+        if len(rows) < 1:
+            return 0
 
+        avgVolatility = 0
+        count = 0
+        for row in rows:
+            if row[2] is not None and row[1] is not None:
+                avgVolatility += abs(row[2] - row[1])
+                count += 1
+
+        if count == 0:
+            return 0
+
+        return round(avgVolatility / count, 4)
 
     def getMinMaxPriceDays(self, dtEnd, days):
         dateEnd = dtEnd.replace(hour = 0, minute = 0, second = 0)
