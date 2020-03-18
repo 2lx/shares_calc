@@ -21,13 +21,13 @@ class AlgoInfo:
         self.fnSellSucc   = []
         self.fnSellFail   = []
         self.fnVol15Days  = []
-        self.fnVol60MinP  = []
+        self.fnMinMax2hP  = []
 
     def appendGlobal(self, date, marketOpen):
         self.axisGlobal.append(date)
         self.fnMarketClose.append(not marketOpen)
 
-    def append(self, date, priceKit, state, volatility, vol60Perc):
+    def append(self, date, priceKit, state, volatility, minMax2hP):
         lowPrice  = priceKit.get(Price.LOW)
         highPrice = priceKit.get(Price.HIGH)
 
@@ -37,7 +37,7 @@ class AlgoInfo:
         self.fnCount.append(state.shareQty)
         self.fnCash.append(state.cash)
         self.fnVol15Days.append(volatility)
-        self.fnVol60MinP.append(vol60Perc * 100.0)
+        self.fnMinMax2hP.append(minMax2hP * 100.0)
         self.fnSoldPrice.append(state.exitPrice)
         self.fnCapital.append(state.cash + (highPrice + lowPrice) * state.shareQty / 2.0)
         if state.buyResult != 0:

@@ -78,23 +78,23 @@ class ShareStat:
 
         return None
 
-    def getPeriodExtremum(self, dt, periodMinutes):
-        prevdt   = dt - timedelta(minutes=periodMinutes)
-        priceKit = self.getPrices(dt)
-
-        curMin, curMax       = priceKit.get(Price.LOW), priceKit.get(Price.HIGH)
-        periodMin, periodMax = self.getMinMaxPriceInterval(prevdt, dt)
-
-        if curMin <= periodMin and curMax >= periodMax:
-            return Extremum.BOTH
-
-        if curMin <= periodMin:
-            return Extremum.MINIMUM
-
-        if curMax >= periodMax:
-            return Extremum.MAXIMUM
-
-        return Extremum.NOT
+    #  def getPeriodExtremum(self, dt, periodMinutes):
+    #      prevdt   = dt - timedelta(minutes=periodMinutes)
+    #      priceKit = self.getPrices(dt)
+    #
+    #      curMin, curMax       = priceKit.get(Price.LOW), priceKit.get(Price.HIGH)
+    #      periodMin, periodMax = self.getMinMaxPriceInterval(prevdt, dt)
+    #
+    #      if curMin <= periodMin and curMax >= periodMax:
+    #          return Extremum.BOTH
+    #
+    #      if curMin <= periodMin:
+    #          return Extremum.MINIMUM
+    #
+    #      if curMax >= periodMax:
+    #          return Extremum.MAXIMUM
+    #
+    #      return Extremum.NOT
 
     def getPrevMinMax(self, dt, deltaMinutes=None, deltaDays=None):
         def getPrices(dt):
@@ -153,29 +153,22 @@ class ShareStat:
 
         return 0 if count == 0 else round(volSum / count, 4)
 
-    def getVolatilityMinutes(self, dtStart, dtEnd):
-        rows = self.cur.execute('''SELECT DateTime, min(LowPrice), max(HighPrice)
-                                   FROM Quotation
-                                   WHERE MarketId = ?
-                                       AND ShareId = ?
-                                       AND Interval = "15"
-                                       AND DateTime >= ? AND DateTime < ?
-                                   ORDER BY DateTime ASC''', (self.marketId, self.shareId, dtStart - self.timeDelta(), dtEnd - self.timeDelta()))
-        rows = self.cur.fetchall()
-        if len(rows) < 1:
-            return 0
-
-        avgVolatility = 0
-        count = 0
-        for row in rows:
-            if row[2] is not None and row[1] is not None:
-                avgVolatility += abs(row[2] - row[1])
-                count += 1
-
-        if count == 0:
-            return 0
-
-        return round(avgVolatility / count, 4)
+    #  def getVolatilityMinutes(self, dtStart, dtEnd):
+    #      rows = self.cur.execute('''SELECT min(LowPrice), max(HighPrice)
+    #                                 FROM Quotation
+    #                                 WHERE MarketId = ?
+    #                                     AND ShareId = ?
+    #                                     AND Interval = "15"
+    #                                     AND DateTime >= ? AND DateTime < ?
+    #                                 GROUP BY MarketId''', (self.marketId, self.shareId, dtStart - self.timeDelta(), dtEnd - self.timeDelta()))
+    #      rows = self.cur.fetchall()
+    #      if len(rows) != 1:
+    #          return 0
+    #
+    #      if rows[0][0] is None and rows[0][1] is None:
+    #          return 0
+    #
+    #      return abs(rows[0][1] - rows[0][0])
 
     def getMinMaxPriceDays(self, dtEnd, days):
         dateEnd = dtEnd.replace(hour = 0, minute = 0, second = 0)

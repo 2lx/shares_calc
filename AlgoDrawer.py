@@ -18,7 +18,8 @@ def drawAlgoInfo(info, market, share):
         ax.xaxis.set_major_locator(locator)
         ax.xaxis.set_major_formatter(formatter)
 
-    ax1.fill_between(info.axisGlobal, 0, max(info.fnHighPrice), where=info.fnMarketClose,
+    ax1ymin, ax1ymax = 0, max(info.fnHighPrice) + 2
+    ax1.fill_between(info.axisGlobal, ax1ymin, ax1ymax, where=info.fnMarketClose,
         facecolor="#e74c3c",
         joinstyle="bevel",
         capstyle="butt",
@@ -32,14 +33,14 @@ def drawAlgoInfo(info, market, share):
         capstyle="butt",
         step="mid",
         label="{0} shares price".format(share,))
-    ax1.fill_between(info.axisDT, 0, info.fnSoldPrice,
+    ax1.fill_between(info.axisDT, ax1ymin, info.fnSoldPrice,
         facecolor="#bdc3c7",
         edgecolor="#7f8c8d",
         joinstyle="bevel",
         capstyle="butt",
         step="mid",
         label="exit price")
-    ax1.axis([minDay, maxDay, 0, max(info.fnHighPrice) + 5])
+    ax1.axis([minDay, maxDay, ax1ymin, ax1ymax])
     ax1.plot(info.axisBuyPrice, info.fnBuyPrice, "bo",
         color="#2980b9",
         marker=6,
@@ -96,10 +97,10 @@ def drawAlgoInfo(info, market, share):
     ax4.grid(True, which="major", axis="both", linestyle="--", alpha=0.6)
     ax4.tick_params(top=True, right=True, left=True, bottom=True, labelright=True)
 
-    ax5.plot(info.axisDT, info.fnVol60MinP,
+    ax5.plot(info.axisDT, info.fnMinMax2hP,
         color="#1abc9c",
-        label="volatility 60 minutes")
-    ax5.axis([minDay, maxDay, 0, max(info.fnVol60MinP) + 0.1])
+        label="min-max difference 120 minutes")
+    ax5.axis([minDay, maxDay, 0, max(info.fnMinMax2hP) + 0.1])
     ax5.set_ylabel("percents")
     ax5.legend()
     ax5.grid(True, which="major", axis="both", linestyle="--", alpha=0.6)
