@@ -116,7 +116,7 @@ class ShareStat:
         priceKit = getPrices(dt)
         dtStart = prevDT(dt)
 
-        while priceKit is None:
+        while priceKit is None and dtStart > datetime(2017, 9, 1):
             priceKit = getPrices(dtStart)
             dtStart = prevDT(dtStart)
 

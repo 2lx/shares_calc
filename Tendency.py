@@ -71,6 +71,9 @@ class TendsSet:
         return updated and self.count < self.maxCount
 
     def proceedTend(self, prePriceKit, curPriceKit):
+        if prePriceKit is None or curPriceKit is None:
+            return False
+
         prePriceMin, prePriceMax = prePriceKit.get(Price.LOW), prePriceKit.get(Price.HIGH)
         curPriceMin, curPriceMax = curPriceKit.get(Price.LOW), curPriceKit.get(Price.HIGH)
         prePriceAvg = (prePriceKit.get(Price.OPEN) + prePriceKit.get(Price.CLOSE)) / 2.0

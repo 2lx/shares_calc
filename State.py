@@ -12,11 +12,11 @@ class State:
         self.sellPrice   = 0
         self.sellResult  = 0
 
-    def buy(self, date, priceKit, volat):
+    def buy(self, date, priceKit, countPercent):
         price            = (priceKit.get(Price.HIGH) + priceKit.get(Price.LOW)) / 2
         self.buyPrice    = price
         self.buyResult   = 1
-        self.shareQty    = self.cash // price
+        self.shareQty    = (self.cash * countPercent // price)
         self.cash        = self.cash - price * self.shareQty * (1 + self.commission)
         #  print("Buy : at {0} price {1:0>5.2f}$ X {2:0>4n}"
         #      .format(date, price, self.shareQty))

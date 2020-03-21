@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS Share(
 
 INSERT INTO Share (Name, Abbr)
 SELECT "Advanced Micro Devices, Inc.", "AMD" UNION ALL
+SELECT "The Boeing Company", "BA" UNION ALL
 SELECT "Bed Bath & Beyond, Inc.", "BBBY" UNION ALL
 SELECT "Cisco Systems, Inc.", "CSCO";
 

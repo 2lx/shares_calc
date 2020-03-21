@@ -13,7 +13,7 @@ class Algo2:
         self.tends15m  = {}
         self.tends60m  = {}
 
-    def setParams(self, volatDays, volatCoef):
+    def setParams(self, volatDays, volatCoef, p1, p2):
         self.volatDays = volatDays
         self.volatCoef = volatCoef
         self.info      = AlgoInfo()
