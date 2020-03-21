@@ -11,11 +11,11 @@ class Price(Enum):
     LOW   = 2
     CLOSE = 3
 
-class Extremum(Enum):
-    NOT     = 0
-    MINIMUM = 1
-    MAXIMUM = 2
-    BOTH    = 3
+#  class Extremum(Enum):
+#      NOT     = 0
+#      MINIMUM = 1
+#      MAXIMUM = 2
+#      BOTH    = 3
 
 class PriceKit:
     def __init__(self, openP, highP, lowP, closeP):

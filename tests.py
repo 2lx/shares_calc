@@ -78,52 +78,52 @@ class TestShareStat(unittest.TestCase):
         def checkTends(tendsVals):
             index = 0
             for val in tendsVals:
-                self.assertEqual(tends[Tendency(index)], val)
+                self.assertEqual(tends.get(Tendency(index)), val)
                 index += 1
 
-        checkTends([0, 1, 0, 2, 0, 1, 0, 0, 0])
+        checkTends([1, 0, 2, 0, 1, 0, 0, 0])
 
         date = datetime(2018, 2, 3) + timedelta(hours=2, minutes=15) + self.stat.timeDelta()
         tends = self.stat.tendsRow(date, deltaMinutes=15)
-        checkTends([0, 4, 2, 0, 2, 0, 2, 0, 2])
+        checkTends([4, 2, 0, 2, 0, 2, 0, 2])
 
         date = datetime(2018, 2, 5) + timedelta(hours=20, minutes=0) + self.stat.timeDelta()
         tends = self.stat.tendsRow(date, deltaMinutes=15)
-        checkTends([0, 0, 6, 0, 6, 0, 6, 0, 0])
+        checkTends([0, 6, 0, 6, 0, 6, 0, 0])
 
         date = datetime(2018, 2, 5) + timedelta(hours=23, minutes=45) + self.stat.timeDelta()
         tends = self.stat.tendsRow(date, deltaMinutes=15)
-        checkTends([0, 2, 0, 2, 1, 2, 0, 0, 1])
+        checkTends([2, 0, 2, 1, 2, 0, 0, 1])
 
         date = datetime(2018, 2, 6) + timedelta(hours=22, minutes=15) + self.stat.timeDelta()
         tends = self.stat.tendsRow(date, deltaMinutes=15)
-        checkTends([0, 1, 6, 2, 0, 1, 0, 2, 0])
+        checkTends([1, 6, 2, 0, 1, 0, 2, 0])
 
         date = datetime(2018, 2, 6) + timedelta(hours=22, minutes=15) + self.stat.timeDelta()
         tends = self.stat.tendsRow(date, deltaMinutes=30)
-        checkTends([0, 0, 3, 0, 3, 0, 3, 0, 0])
+        checkTends([0, 3, 0, 3, 0, 3, 0, 0])
 
         date = datetime(2018, 2, 6) + timedelta(hours=22, minutes=15) + self.stat.timeDelta()
         tends = self.stat.tendsRow(date, deltaMinutes=45)
-        checkTends([0, 0, 3, 0, 2, 0, 2, 0, 0])
+        checkTends([0, 3, 0, 2, 0, 2, 0, 0])
 
         date = datetime(2019, 2, 8)
         tends = self.stat.tendsRow(date, deltaMinutes=1 * 24 * 60)
-        checkTends([0, 0, 1, 0, 1, 0, 1, 0, 0])
+        checkTends([0, 1, 0, 1, 0, 1, 0, 0])
         tends = self.stat.tendsRow(date, deltaDays=1)
-        checkTends([0, 0, 1, 0, 1, 0, 1, 0, 0])
+        checkTends([0, 1, 0, 1, 0, 1, 0, 0])
 
         date = datetime(2019, 2, 4)
         tends = self.stat.tendsRow(date, deltaMinutes=1 * 24 * 60)
-        checkTends([0, 3, 0, 0, 1, 0, 0, 0, 1])
+        checkTends([3, 0, 0, 1, 0, 0, 0, 1])
         tends = self.stat.tendsRow(date, deltaDays=1)
-        checkTends([0, 3, 0, 0, 1, 0, 0, 0, 1])
+        checkTends([3, 0, 0, 1, 0, 0, 0, 1])
 
         date = datetime(2019, 2, 3)
         tends = self.stat.tendsRow(date, deltaMinutes=2 * 24 * 60)
-        checkTends([0, 2, 0, 0, 1, 0, 0, 0, 1])
+        checkTends([2, 0, 0, 1, 0, 0, 0, 1])
         tends = self.stat.tendsRow(date, deltaDays=2)
-        checkTends([0, 2, 0, 0, 1, 0, 0, 0, 1])
+        checkTends([2, 0, 0, 1, 0, 0, 0, 1])
 
 if __name__ == '__main__':
     unittest.main()

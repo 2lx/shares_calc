@@ -56,7 +56,7 @@ class Algo2:
         # BAD!
         # self.tends1d[wddate][Tendency.MINRISE] >= 2
 
-        return date.hour >= 10 and self.tends1d[wddate][Tendency.MAXRISE] >= 2
+        return date.hour >= 10 and self.tends1d[wddate].get(Tendency.MAXRISE) >= 2
 
 
     def process(self, startDate, endDate, cash):
