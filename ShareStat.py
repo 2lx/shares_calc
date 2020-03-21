@@ -5,12 +5,6 @@ from dateutil import parser
 from enum     import Enum
 from Tendency import *
 
-class Price(Enum):
-    OPEN  = 0
-    HIGH  = 1
-    LOW   = 2
-    CLOSE = 3
-
 #  class Extremum(Enum):
 #      NOT     = 0
 #      MINIMUM = 1
@@ -19,10 +13,16 @@ class Price(Enum):
 
 class PriceKit:
     def __init__(self, openP, highP, lowP, closeP):
-        self.prices15 = [ openP, highP, lowP, closeP ]
+        self.prices = [ openP, highP, lowP, closeP ]
+
+    def __eq__(self, other):
+        return self.prices == other.prices
+
+    def __repr__(self):
+        return repr(self.prices)
 
     def get(self, price_type):
-        return self.prices15[price_type.value]
+        return self.prices[price_type.value]
 
 class ShareStat:
     def __init__(self, database, market, share):
@@ -67,7 +67,9 @@ class ShareStat:
         for row in rows:
             date = parser.parse(row[0])
             dateMin, dateMax = parser.parse(row[3]), parser.parse(row[4])
-            self.pricesDay[date] = PriceKit(self.prices15[dateMin].get(Price.OPEN), row[2], row[1], self.prices15[dateMax].get(Price.CLOSE))
+            priceOpen, priceClose = self.prices15[dateMin].get(Price.OPEN), self.prices15[dateMax].get(Price.CLOSE)
+            assert(priceOpen is not None and priceClose is not None)
+            self.pricesDay[date] = PriceKit(priceOpen, row[2], row[1], priceClose)
 
     def timeDelta(self):
         return self.delta
@@ -96,13 +98,13 @@ class ShareStat:
     #
     #      return Extremum.NOT
 
-    def getPrevMinMax(self, dt, deltaMinutes=None, deltaDays=None):
+    def getPrevDatePriceKit(self, dt, deltaMinutes=None, deltaDays=None):
         def getPrices(dt):
             if deltaDays is not None:
-                return self.getMinMaxPriceDays(dt, deltaDays)
+                return self.calcPriceKitDays(dt, deltaDays)
 
             if deltaMinutes is not None:
-                return self.getMinMaxPriceMinutes(dt - timedelta(minutes=deltaMinutes), dt)
+                return self.calcPriceKitMinutes(dt - timedelta(minutes=deltaMinutes), dt)
 
         def prevDT(dt):
             if deltaDays is not None:
@@ -111,14 +113,14 @@ class ShareStat:
             if deltaMinutes is not None:
                 return dt - timedelta(minutes=deltaMinutes)
 
-        priceMin, priceMax = getPrices(dt)
+        priceKit = getPrices(dt)
         dtStart = prevDT(dt)
 
-        while (priceMin is None) or (priceMax is None):
-            priceMin, priceMax = getPrices(dtStart)
+        while priceKit is None:
+            priceKit = getPrices(dtStart)
             dtStart = prevDT(dtStart)
 
-        return dtStart, priceMin, priceMax
+        return dtStart, priceKit
 
     def tendsRow(self, dtEnd, deltaDays=None, deltaMinutes=None, maxCount=9):
         dt = dtEnd
@@ -127,12 +129,17 @@ class ShareStat:
 
         tends = TendsSet(maxCount)
 
-        curDTStart, curPriceMin, curPriceMax = self.getPrevMinMax(dt, deltaDays=deltaDays, deltaMinutes=deltaMinutes)
-        preDTStart, prePriceMin, prePriceMax = self.getPrevMinMax(curDTStart, deltaDays=deltaDays, deltaMinutes=deltaMinutes)
+        curDTStart, curPriceKit = self.getPrevDatePriceKit(dt,         deltaDays=deltaDays, deltaMinutes=deltaMinutes)
+        preDTStart, prePriceKit = self.getPrevDatePriceKit(curDTStart, deltaDays=deltaDays, deltaMinutes=deltaMinutes)
+        #  print(curDTStart, curPriceKit)
+        #  print(preDTStart, prePriceKit)
 
-        while tends.proceedTend(curPriceMin, curPriceMax, prePriceMin, prePriceMax):
-            curDTStart, curPriceMin, curPriceMax = preDTStart, prePriceMin, prePriceMax
-            preDTStart, prePriceMin, prePriceMax = self.getPrevMinMax(preDTStart, deltaDays=deltaDays, deltaMinutes=deltaMinutes)
+        while tends.proceedTend(prePriceKit, curPriceKit):
+            curDTStart, curPriceKit = preDTStart, prePriceKit
+            preDTStart, prePriceKit = self.getPrevDatePriceKit(curDTStart, deltaDays=deltaDays, deltaMinutes=deltaMinutes)
+        #      print(preDTStart, prePriceKit)
+        #
+        #  print(tends)
 
         return tends.tends
 
@@ -170,42 +177,56 @@ class ShareStat:
     #
     #      return abs(rows[0][1] - rows[0][0])
 
-    def getMinMaxPriceDays(self, dtEnd, days):
-        dateEnd = dtEnd.replace(hour = 0, minute = 0, second = 0)
-        date = dateEnd - timedelta(days=days)
+    def calcPriceKitDays(self, dateEnd, days):
+        dtEnd = dateEnd.replace(hour = 0, minute = 0, second = 0)
+        dt = dtEnd - timedelta(days=days)
 
-        minResult, maxResult = 999999, 0
-        updated = False
+        openResult, closeResult = None, None
+        lowResult,  highResult  = 999999, 0
+        updated                 = False
 
-        while date < dateEnd:
-            if date in self.pricesDay:
-                priceKit = self.pricesDay[date]
-                minPrice, maxPrice   = priceKit.get(Price.LOW), priceKit.get(Price.HIGH)
-                minResult, maxResult = min(minResult, minPrice), max(maxResult, maxPrice)
-                updated              = True
+        while dt < dtEnd:
+            if dt in self.pricesDay:
+                priceKit              = self.pricesDay[dt]
+                lowPrice,  highPrice  = priceKit.get(Price.LOW), priceKit.get(Price.HIGH)
+                lowResult, highResult = min(lowResult, lowPrice), max(highResult, highPrice)
 
-            date += timedelta(days=1)
+                if openResult is None:
+                    openResult = priceKit.get(Price.OPEN)
+                closeResult = priceKit.get(Price.CLOSE)
 
-        if not updated:
-            return None, None
+                updated = True
 
-        return minResult, maxResult
-
-    def getMinMaxPriceMinutes(self, dtStart, dtEnd):
-        date = dtStart
-        curMin, curMax = 999999, 0
-        updated = False
-
-        while date < dtEnd:
-            if date in self.prices15:
-                priceKit       = self.prices15[date]
-                curMin, curMax = min(curMin, priceKit.get(Price.LOW)), max(curMax, priceKit.get(Price.HIGH))
-                updated        = True
-
-            date = date + timedelta(minutes=15)
+            dt += timedelta(days=1)
 
         if not updated:
-            return None, None
+            return None
 
-        return curMin, curMax
+        return PriceKit(openResult, highResult, lowResult, closeResult)
+
+    def calcPriceKitMinutes(self, dtStart, dtEnd):
+        dt = dtStart
+
+        openResult, closeResult = None, None
+        lowResult,  highResult  = 999999, 0
+        updated                 = False
+
+        while dt < dtEnd:
+            if dt in self.prices15:
+                priceKit              = self.prices15[dt]
+                lowPrice,  highPrice  = priceKit.get(Price.LOW), priceKit.get(Price.HIGH)
+                lowResult, highResult = min(lowResult, lowPrice), max(highResult, highPrice)
+
+                if openResult is None:
+                    openResult = priceKit.get(Price.OPEN)
+                closeResult = priceKit.get(Price.CLOSE)
+
+                updated = True
+
+            dt += timedelta(minutes=15)
+
+        if not updated:
+            return None
+
+        return PriceKit(openResult, highResult, lowResult, closeResult)
 

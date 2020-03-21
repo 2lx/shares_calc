@@ -32,8 +32,8 @@ class Algo2:
 
         #  if whdate not in self.tends60m:
         #      self.tends60m[whdate] = self.stat.tendsRow(date, deltaMinutes=60)
-        min2h, max2h  = self.stat.getMinMaxPriceMinutes(date - timedelta(minutes=60), date)
-        minMaxDiff = 0 if (min2h is None or max2h is None) else abs(max2h - min2h)
+        priceKit2h = self.stat.calcPriceKitMinutes(date - timedelta(minutes=60), date)
+        minMaxDiff = 0 if (priceKit2h is None) else abs(priceKit2h.get(Price.HIGH) - priceKit2h.get(Price.LOW))
         minMax2hP = minMaxDiff / self.stat.getPrices(date).get(Price.OPEN)
 
         #  return date.hour >= 9 and self.tends15m[date][Tendency.MINRISE] >= 2 and minMax2hP < 0.08 and \
@@ -80,8 +80,8 @@ class Algo2:
                 if state.shareQty > 0:
                     state.updateExitPrice(priceKit, volatility15)
 
-                min2h, max2h  = self.stat.getMinMaxPriceMinutes(date - timedelta(minutes=360), date)
-                minMaxDiff = 0 if (min2h is None or max2h is None) else abs(max2h - min2h)
+                priceKit2h = self.stat.calcPriceKitMinutes(date - timedelta(minutes=60), date)
+                minMaxDiff = 0 if (priceKit2h is None) else abs(priceKit2h.get(Price.HIGH) - priceKit2h.get(Price.LOW))
                 minMax2hP = minMaxDiff / self.stat.getPrices(date).get(Price.OPEN)
 
                 self.info.append(date, priceKit, state, volatility15, minMax2hP)

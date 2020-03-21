@@ -1,14 +1,22 @@
 from enum     import Enum
 
+class Price(Enum):
+    OPEN  = 0
+    HIGH  = 1
+    LOW   = 2
+    CLOSE = 3
+
 class Tendency(Enum):
-    MINRISE   = 0
-    MINFALL   = 1
-    MAXRISE   = 2
-    MAXFALL   = 3
-    ALLRISE   = 4
-    ALLFALL   = 5
-    EXPAND    = 6
-    SHRINK    = 7
+    MINRISE = 0
+    MINFALL = 1
+    MAXRISE = 2
+    MAXFALL = 3
+    AVGRISE = 4
+    AVGFALL = 5
+    ALLRISE = 6
+    ALLFALL = 7
+    EXPAND  = 8
+    SHRINK  = 9
 
 class TendKit:
     def __init__(self):
@@ -17,10 +25,12 @@ class TendKit:
             Tendency.MINFALL:   0,
             Tendency.MAXRISE:   0,
             Tendency.MAXFALL:   0,
+            Tendency.AVGRISE:   0,
+            Tendency.AVGFALL:   0,
         }
 
     def get(self, tend):
-        if tend in [Tendency.MINRISE, Tendency.MAXRISE, Tendency.MINFALL, Tendency.MAXFALL]:
+        if tend in [Tendency.MINRISE, Tendency.MAXRISE, Tendency.MINFALL, Tendency.MAXFALL, Tendency.AVGRISE, Tendency.AVGFALL]:
             return self.tends[tend]
         elif tend == Tendency.ALLRISE:
             return min(self.tends[Tendency.MINRISE], self.tends[Tendency.MAXRISE])
@@ -32,7 +42,7 @@ class TendKit:
             return min(self.tends[Tendency.MINRISE], self.tends[Tendency.MAXFALL])
 
     def inc(self, tend):
-        if tend in [Tendency.MINRISE, Tendency.MAXRISE, Tendency.MINFALL, Tendency.MAXFALL]:
+        if tend in [Tendency.MINRISE, Tendency.MINFALL, Tendency.MAXRISE, Tendency.MAXFALL, Tendency.AVGRISE, Tendency.AVGFALL]:
             self.tends[tend] += 1
 
 
@@ -41,6 +51,13 @@ class TendsSet:
         self.tends    = TendKit()
         self.count    = 0
         self.maxCount = maxCount
+
+    def __repr__(self):
+        ts = []
+        for k in Tendency:
+            ts.append(self.tends.get(k))
+
+        return repr(ts)
 
     def incTends(self, incTends):
         updated = False
@@ -53,7 +70,12 @@ class TendsSet:
         self.count += 1
         return updated and self.count < self.maxCount
 
-    def proceedTend(self, curPriceMin, curPriceMax, prePriceMin, prePriceMax):
+    def proceedTend(self, prePriceKit, curPriceKit):
+        prePriceMin, prePriceMax = prePriceKit.get(Price.LOW), prePriceKit.get(Price.HIGH)
+        curPriceMin, curPriceMax = curPriceKit.get(Price.LOW), curPriceKit.get(Price.HIGH)
+        prePriceAvg = (prePriceKit.get(Price.OPEN) + prePriceKit.get(Price.CLOSE)) / 2.0
+        curPriceAvg = (curPriceKit.get(Price.OPEN) + curPriceKit.get(Price.CLOSE)) / 2.0
+
         if prePriceMax is None or curPriceMax is None:
             return True
 
@@ -66,5 +88,9 @@ class TendsSet:
             forInc.append(Tendency.MAXRISE)
         if prePriceMax >= curPriceMax:
             forInc.append(Tendency.MAXFALL)
+        if prePriceAvg <= curPriceAvg:
+            forInc.append(Tendency.AVGRISE)
+        if prePriceAvg >= curPriceAvg:
+            forInc.append(Tendency.AVGFALL)
 
         return self.incTends(forInc)
