@@ -4,7 +4,7 @@ sqlite3 "$DBFILE" ".read dbscript.sql"
 
 rm -f "csv/*out.csv" 2> /dev/null
 
-for f in csv/*.csv; do
+for f in csv/*_in.csv; do
     echo "Format file:" $f
     ./format_csv.sh $f > "$f.out"
 done

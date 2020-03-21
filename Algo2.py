@@ -21,8 +21,8 @@ class Algo2:
         if wddate not in self.tends1d:
             self.tends1d[wddate] = self.stat.tendsRow(date, deltaDays=1)
 
-        #  if wddate not in self.tends2d:
-        #      self.tends2d[wddate] = self.stat.tendsRow(date, deltaDays=2)
+        if wddate not in self.tends2d:
+            self.tends2d[wddate] = self.stat.tendsRow(date, deltaDays=2)
 
         #  if wddate not in self.tends7d:
         #      self.tends7d[wddate] = self.stat.tendsRow(date, deltaDays=7)
@@ -56,12 +56,14 @@ class Algo2:
         # BAD!
         # self.tends1d[wddate][Tendency.MINRISE] >= 2
 
-        return date.hour >= 10 and self.tends1d[wddate].get(Tendency.MAXRISE) >= 2
+        # not BAD
+        #and not self.tends1d[wddate].get(Tendency.AVGFALL) >= 3
 
+        return date.hour >= 10 and self.tends1d[wddate].get(Tendency.MAXRISE) >= 2
 
     def process(self, startDate, endDate, cash):
         date     = startDate
-        state    = State(cash, 2.5)
+        state    = State(cash, 2.4)
         lastSell = date - timedelta(days=1000)
 
         while date < endDate:
@@ -69,7 +71,7 @@ class Algo2:
             self.info.appendGlobal(date, priceKit is not None)
 
             if priceKit is not None:
-                volatility15 = self.stat.getVolatilityDays(date, 15)
+                volatility15 = self.stat.getVolatilityDays(date, 30)
 
                 if state.shareQty == 0 and self.buySignal1(date):
                     state.buy(date, priceKit, volatility15)

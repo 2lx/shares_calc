@@ -11,6 +11,7 @@ from AlgoDrawer import drawAlgoInfo
 cash      = 2000.0
 startDate = datetime(2017, 10, 1)
 endDate   = datetime(2020,  3, 1)
+#  endDate   = datetime(2020,  3, 20)
 market    = "SPBEX"
 share     = "AMD"
 
