@@ -5,14 +5,16 @@ from State     import State
 from datetime  import datetime, timedelta
 
 class Algo2:
-    def __init__(self, shareStat):
-        self.stat = shareStat
-        self.info = AlgoInfo()
-        self.tends1d = {}
-        self.tends2d = {}
-        self.tends7d = {}
-        self.tends15m = {}
-        self.tends60m = {}
+    def __init__(self, shareStat, volatDays, volatCoef):
+        self.stat      = shareStat
+        self.volatDays = volatDays
+        self.volatCoef = volatCoef
+        self.info      = AlgoInfo()
+        self.tends1d   = {}
+        self.tends2d   = {}
+        self.tends7d   = {}
+        self.tends15m  = {}
+        self.tends60m  = {}
 
     def buySignal1(self, date):
         wddate = date.replace(hour = 0, minute = 0, second = 0)
@@ -63,7 +65,7 @@ class Algo2:
 
     def process(self, startDate, endDate, cash):
         date     = startDate
-        state    = State(cash, 2.4)
+        state    = State(cash, volatCoef)
         lastSell = date - timedelta(days=1000)
 
         while date < endDate:
@@ -71,7 +73,7 @@ class Algo2:
             self.info.appendGlobal(date, priceKit is not None)
 
             if priceKit is not None:
-                volatility15 = self.stat.getVolatilityDays(date, 30)
+                volatility15 = self.stat.getVolatilityDays(date, self.volatDays)
 
                 if state.shareQty == 0 and self.buySignal1(date):
                     state.buy(date, priceKit, volatility15)
