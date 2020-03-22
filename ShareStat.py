@@ -26,9 +26,14 @@ class PriceKit:
 
 class ShareStat:
     def __init__(self, database, market, share):
-        self.delta = timedelta(hours=-3)
-        self.conn  = sqlite3.connect(database)
-        self.cur   = self.conn.cursor()
+        self.delta    = timedelta(hours = -3)
+        self.conn     = sqlite3.connect(database)
+        self.cur      = self.conn.cursor()
+        self.tends1d  = {}
+        self.tends2d  = {}
+        self.tends7d  = {}
+        self.tends15m = {}
+        self.tends60m = {}
 
         rows = self.cur.execute('''SELECT rowid FROM Market WHERE Abbr = ?''', (market,))
         self.marketId = self.cur.fetchone()[0]
@@ -73,6 +78,23 @@ class ShareStat:
 
     def timeDelta(self):
         return self.delta
+
+    def updateTends(self, date):
+        wddate = date.replace(hour = 0, minute = 0, second = 0)
+        whdate = date.replace(minute = 0, second = 0)
+
+        if wddate not in self.tends1d:
+            self.tends1d[wddate] = self.tendsRow(date, deltaDays=1)
+
+        if wddate not in self.tends2d:
+            self.tends2d[wddate] = self.tendsRow(date, deltaDays=2)
+
+        if wddate not in self.tends7d:
+            self.tends7d[wddate] = self.tendsRow(date, deltaDays=7)
+
+        #  if date not in self.tends15m:
+            #  self.tends15m[date] = self.stat.tendsRow(date, deltaMinutes=15)
+
 
     def getPrices(self, date):
         if date in self.prices15:

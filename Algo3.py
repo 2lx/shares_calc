@@ -7,12 +7,7 @@ import math
 
 class Algo3:
     def __init__(self, shareStat):
-        self.stat      = shareStat
-        self.tends1d   = {}
-        self.tends2d   = {}
-        self.tends7d   = {}
-        self.tends15m  = {}
-        self.tends60m  = {}
+        self.stat = shareStat
 
     def setParams(self, volatDays, volatCoef, cntPercentOffset, cntPercentMult):
         self.volatDays        = volatDays
@@ -24,18 +19,7 @@ class Algo3:
     def buySignal1(self, date):
         wddate = date.replace(hour = 0, minute = 0, second = 0)
         whdate = date.replace(minute = 0, second = 0)
-
-        if wddate not in self.tends1d:
-            self.tends1d[wddate] = self.stat.tendsRow(date, deltaDays=1)
-
-        if wddate not in self.tends2d:
-            self.tends2d[wddate] = self.stat.tendsRow(date, deltaDays=2)
-
-        if wddate not in self.tends7d:
-            self.tends7d[wddate] = self.stat.tendsRow(date, deltaDays=7)
-
-        #  if date not in self.tends15m:
-            #  self.tends15m[date] = self.stat.tendsRow(date, deltaMinutes=15)
+        self.stat.updateTends(date)
 
         dlt = date - date.replace(hour=0, minute=0)
         dltMinTime = timedelta(hours=10, minutes=15)
@@ -50,7 +34,7 @@ class Algo3:
         return   dlt >= dltMinTime and dlt < dltMaxTime and \
             not (dlt >= dlt1Min    and dlt < dlt1Max)   and \
             not (dlt >= dlt2Min    and dlt < dlt2Max)   and \
-            self.tends1d[wddate].get(Tendency.MAXRISE) >= 2
+            self.stat.tends1d[wddate].get(Tendency.MAXRISE) >= 2
 
     def process(self, startDate, endDate, cash):
         date     = startDate
@@ -64,6 +48,8 @@ class Algo3:
             if priceKit is not None:
                 volat = self.stat.getVolatilityDays(date, self.volatDays)
 
+                #  if (state.shareQty == 0 or (state.buyPrice <= state.exitPrice - volat)) and self.buySignal1(date):
+                #  if (state.shareQty == 0 or (state.buyDate - date).days > 2) and self.buySignal1(date):
                 if state.shareQty == 0 and self.buySignal1(date):
                     volatPercent = volat / priceKit.get(Price.OPEN)
                     countPercent = 1 - math.sqrt(max(0, volatPercent - self.cntPercentOffset)) * self.cntPercentMult
@@ -71,9 +57,9 @@ class Algo3:
                     countPercent = max(0.3, min(1, countPercent))
 
                     wddate = date.replace(hour = 0, minute = 0, second = 0)
-                    if self.tends7d[wddate].get(Tendency.AVGRISE) >= 1:
+                    if self.stat.tends7d[wddate].get(Tendency.AVGRISE) >= 1:
                         countPercent = 1
-                    if self.tends2d[wddate].get(Tendency.AVGFALL) >= 2:
+                    if self.stat.tends2d[wddate].get(Tendency.AVGFALL) >= 2:
                         countPercent = 0.3
                     #  countPercent = 1
                     #  print(round(volatPercent, 4), round(countPercent, 4))

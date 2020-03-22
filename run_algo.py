@@ -74,7 +74,7 @@ minCap    = round(min(algoInfo.fnCapital), 4)
 maxCap    = round(max(algoInfo.fnCapital), 4)
 goodDeals = len(algoInfo.fnSellSucc)
 badDeals  = len(algoInfo.fnSellFail)
-print("Result: {0}, min: {1}, max: {2}, good: {3}, bad: {4}".format(result, minCap, maxCap, goodDeals, badDeals))
+print("Result: {0}, min: {1}, max: {2}, good: {3}, bad: {4}".format(round(result, 2), minCap, maxCap, goodDeals, badDeals))
 
 drawAlgoInfo(algoInfo, market, share)
 
